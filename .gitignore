@@ -1,0 +1,46 @@
+# --- Project data ---------------------------------------------------------
+# Everything here is regenerable via src/fetch_data.py + src/build_network.py.
+# data/raw/ holds the GTFS zip and the ~250 MB Nebraska OSM extract.
+# data/processed/ holds the clipped .pbf, the R5 network cache, the destination
+# grid, and the basemap tile cache.
+data/raw/
+data/processed/
+
+# data/origins.csv IS tracked -- it is curated input, not derived data.
+
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# --- Jupyter --------------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- r5py / R5 ------------------------------------------------------------
+# r5py downloads the R5 jar and writes network caches next to its inputs.
+*.jar
+*.mapdb
+*.mapdb.p
+network.dat
+r5py*.log
+
+# --- Secrets / local config ----------------------------------------------
+.env
+*.local.yml
+
+# --- OS / editors ---------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
