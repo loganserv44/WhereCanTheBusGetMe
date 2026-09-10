@@ -120,6 +120,22 @@ methodology. Export `output/panels/{origin}.png` at ~200 dpi + a contact sheet. 
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
 
+**Task 7 — Publish to GitHub Pages (`src/publish.py`).**
+The finished panels are published to the existing personal site repo
+(`loganserv44/loganserv44.github.io`) as a self-contained subfolder, matching the pattern
+already used by `mail-in-ballot-search/` and `profsearch/`. `publish.py` takes the site
+repo path (config or `--site-repo`) and:
+- copies `output/panels/*.png` → `where-the-bus-goes/panels/`
+- copies `output/isochrones/*.geojson` → `where-the-bus-goes/data/` (unused by the v1
+  page, but it makes an interactive version additive later)
+- renders `where-the-bus-goes/index.html` from a template, injecting the feed version,
+  download date, scenario dates, and the methodology summary so the page cannot drift
+  from what actually ran
+- stages nothing and commits nothing — it prints what changed and leaves both repos for
+  manual review and commit
+
+Final URL: `https://loganserv44.github.io/where-the-bus-goes/`
+
 ### Project structure
 
 ```
@@ -133,7 +149,10 @@ src/
   build_network.py
   compute_isochrones.py
   render_panels.py
+  publish.py               # copy panels + render index.html into the Pages site repo
   common.py                # config load, slugify, paths, scenario-date derivation
+  templates/
+    page.html.j2           # the published project page
 notebooks/
   premise_check.ipynb
 output/
@@ -174,10 +193,22 @@ shrinks after dark.
 **B** works a shift ending at 9:30pm. The Tue 9pm panel shows whether the bus can still
 get them home.
 
+### Where this lives
+
+- **Pipeline repo** (this one): `github.com/loganserv44/WhereCanTheBusGetMe`, public.
+  The public pipeline is part of the argument — the Methodology section promises "here is
+  exactly how this was computed," and the repo is what backs that up.
+- **Published page**: `loganserv44.github.io/where-the-bus-goes/`, deployed from the
+  separate site repo via Task 7. The two repos stay separate deliberately: the pipeline
+  pulls a ~250 MB OSM extract and an R5 network cache, none of which belongs in a repo
+  whose job is serving static files.
+
 ### Still open
 
-- Where this lives when it's done (GitHub Pages, embedded in a post, PDF). Revisit once
-  panels exist.
+- License for the repo (MIT for the code vs. CC BY for the maps, or both).
+- Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
+  start linking out to the project pages. Out of scope here, but this project makes it
+  three unlinked pages.
 
 ### Out of scope for v1
 

@@ -48,22 +48,35 @@ conda activate wherecanthebusgetme
 ## Running the pipeline
 
 ```bash
-python src/fetch_data.py        # download GTFS + OSM
-python src/build_network.py     # clip OSM, build R5 network, generate destination grid
+python src/fetch_data.py          # download GTFS + OSM
+python src/build_network.py       # clip OSM, build R5 network, generate destination grid
 python src/compute_isochrones.py  # travel-time grids per origin x scenario
-python src/render_panels.py     # the comparison figures
+python src/render_panels.py       # the comparison figures
+python src/publish.py             # copy panels + page into the Pages site repo
 ```
+
+## Published output
+
+The finished maps are published to
+**[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/)**,
+deployed from the separate [`loganserv44.github.io`](https://github.com/loganserv44/loganserv44.github.io)
+repo. `src/publish.py` copies the rendered panels across and regenerates the page so its
+stated feed version and scenario dates always match the run that produced the images.
+
+This repo holds the pipeline; that one holds the website. They're kept separate because
+the pipeline pulls a ~250 MB OSM extract and an R5 network cache, which have no business
+in a repo that serves static files.
 
 ## Repository layout
 
 ```
-config.yml      scenarios, time bands, grid size, walk limits
+config.yml        scenarios, time bands, grid size, walk limits
 data/origins.csv  the chosen origin points (curated, tracked)
-src/            pipeline scripts
-notebooks/      exploratory analysis, premise verification
-output/         grids, isochrone GeoJSON, rendered panels
-methodology.md  the public methodology statement
-PLAN.md         scope, decisions, and task breakdown
+src/              pipeline scripts + the published page template
+notebooks/        exploratory analysis, premise verification
+output/           grids, isochrone GeoJSON, rendered panels
+methodology.md    the public methodology statement
+PLAN.md           scope, decisions, and task breakdown
 ```
 
 ## License
