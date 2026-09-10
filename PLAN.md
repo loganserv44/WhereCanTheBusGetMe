@@ -10,16 +10,32 @@ day it is.
 The core deliverable is a set of side-by-side panels: same origin, four different
 departure times. The comparison is the point, not any single map.
 
-### The premise
+### The premise — VERIFIED 2026-09-10 (feed `20260828`)
 
-StarTran runs ~18 routes, weekdays ~5:15am–9:55pm, Saturdays ~5:55am–7:05pm, and no
-service Sundays.
-  - **VERIFY THIS IN calendar.txt / calendar_dates.txt / stop_times.txt BEFORE BUILDING
-    ANYTHING ON IT** — this is Task 0 below and is a hard gate.
+Task 0 is complete. Run `python src/premise_check.py` to reproduce; full findings in
+[methodology.md](methodology.md).
 
-If accurate: the reachable area from any point collapses at night, shrinks further
-Saturday evening, and goes to zero on Sunday. The blank Sunday panel requires no
-computation and is the strongest graphic in the project.
+StarTran runs **18 routes**, and **no Sunday service** — confirmed two independent ways:
+neither of the feed's two service patterns has `sunday=1`, and the feed contains zero
+service-*adding* date exceptions, so none can be added by date either. Its single
+exception removes weekday service on Labor Day.
+
+| Day type | Trips | First departure | Last arrival |
+| --- | --- | --- | --- |
+| Weekday | 1,101 | 05:40 | 21:50 |
+| Saturday | 295 (14 of 18 routes) | 06:40 | 19:35 |
+| **Sunday** | **0** | — | — |
+
+The originally assumed spans (weekday ~5:15am–9:55pm, Saturday ~5:55am–7:05pm) were
+close but wrong; the verified figures are above. The argument is unaffected.
+
+The reachable area from any point collapses at night, shrinks further Saturday evening,
+and goes to zero on Sunday. The blank Sunday panel requires no computation and is the
+strongest graphic in the project.
+
+**The network-wide span overstates what a rider can use.** Of 18 weekday routes, only 8
+still operate after 9:00pm and only 3 after 9:30pm. This shapes the evening panel and
+the open question below.
 
 ### Scope (v1)
 
@@ -205,6 +221,14 @@ get them home.
 
 ### Still open
 
+- **Evening scenario times vs. the 60-minute window** (raised by Task 0, must be settled
+  before Task 3). The methodology takes the median travel time across a 60-min departure
+  window. At Tue 8am that window is uniformly served. At Tue 9pm it runs 21:00–22:00 when
+  the last bus arrives at 21:50, and at Sat 6pm it runs 18:00–19:00 when only two routes
+  operate past 19:00 — so both evening medians are computed across a largely empty
+  window. Options: shift the evening scenarios earlier (e.g. Tue 8pm / Sat 5pm) so the
+  windows sit inside service; keep the times and let the near-empty panels be the finding;
+  or vary the window length by scenario (which breaks comparability across panels).
 - License for the repo (MIT for the code vs. CC BY for the maps, or both).
 - Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
   start linking out to the project pages. Out of scope here, but this project makes it
