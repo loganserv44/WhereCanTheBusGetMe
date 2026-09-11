@@ -1,0 +1,56 @@
+# Conda environment for the StarTran isochrone pipeline.
+#
+#   micromamba create -f environment.yml        (or: conda env create -f environment.yml)
+#   micromamba activate wherecanthebusgetme
+#
+# This project was set up with micromamba because the Miniforge NSIS installer aborts
+# (exit code 2) on this machine. Either tool produces the same conda-forge environment.
+#
+# Two pins are deliberate; everything else is left to the solver so it can pick a
+# mutually compatible set:
+#
+#   openjdk=25  r5py runs Conveyal R5 on the JVM. Keeping the JDK *inside* the
+#               environment means the system Java installation is never touched or
+#               shadowed.
+#
+#               The version matters more than it looks. r5py's conda recipe declares
+#               `openjdk >=21`, but r5py/util/jvm.py unconditionally passes
+#               `--enable-native-access=ALL-UNNAMED` to the JVM, and that flag only
+#               exists from JDK 22 (JEP 454). On Java 21 the solver is satisfied and
+#               the JVM then refuses to start with "Unrecognized option". The
+#               declared dependency understates the real requirement, so pin >=22
+#               explicitly rather than trusting the metadata.
+#
+#   python=3.12 The geospatial stack is best-tested here. Python 3.13 works but
+#               pyogrio -- geopandas' default I/O engine -- had no 3.13 wheel at the
+#               time of writing, which forces a fallback engine for no benefit.
+#
+# Exact resolved versions are recorded in environment.lock.yml after the first
+# successful solve; that file is what reproduces a run, not this one.
+
+name: wherecanthebusgetme
+
+channels:
+  - conda-forge
+
+dependencies:
+  # --- core ---
+  - python=3.12
+  - pandas
+  - pyarrow          # parquet I/O for the travel-time grids
+  - pyyaml           # config.yml
+  - requests         # data acquisition
+
+  # --- routing ---
+  - openjdk=25       # >=22 required in practice; see note above
+  - r5py             # Python wrapper for Conveyal R5
+
+  # --- geospatial ---
+  - geopandas
+  - shapely
+  - pyogrio          # geopandas file I/O (GeoPackage, GeoJSON)
+  - pyosmium         # clipping the Nebraska OSM extract to Lincoln
+
+  # --- rendering ---
+  - matplotlib-base
+  - contextily       # basemap tiles

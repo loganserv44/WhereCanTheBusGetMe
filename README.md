@@ -37,13 +37,27 @@ recorded with checksums in `data/raw/MANIFEST.json`.
 
 ## Setup
 
-Requires **Python 3.11+** and **Java 21** (r5py runs the R5 routing engine on the JVM).
-A conda environment is the least painful way to get both:
+Requires **Python 3.12** and **Java 22 or newer** (r5py runs the R5 routing engine on
+the JVM). A conda-forge environment supplies both and keeps the JDK isolated, so your
+system Java installation is untouched:
 
 ```bash
-conda env create -f environment.yml
-conda activate wherecanthebusgetme
+micromamba create -f environment.yml
+micromamba activate wherecanthebusgetme
 ```
+
+`conda env create -f environment.yml` works identically if you have conda. This project
+was set up with [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html)
+— a single ~11 MB binary, no installer — because the Miniforge installer aborts on
+Windows here.
+
+> **Java version gotcha.** r5py's package metadata declares `openjdk >=21`, but it
+> unconditionally passes `--enable-native-access=ALL-UNNAMED` to the JVM, and that flag
+> only exists from JDK 22. On Java 21 the environment solves cleanly and then fails at
+> runtime with `Unable to start JVM`. `environment.yml` pins `openjdk=25` for this
+> reason — don't "helpfully" relax it back to 21.
+
+On first use r5py downloads the R5 routing engine jar (~64 MB) into its own cache.
 
 ## Running the pipeline
 
@@ -64,8 +78,8 @@ repo. `src/publish.py` copies the rendered panels across and regenerates the pag
 stated feed version and scenario dates always match the run that produced the images.
 
 This repo holds the pipeline; that one holds the website. They're kept separate because
-the pipeline pulls a ~250 MB OSM extract and an R5 network cache, which have no business
-in a repo that serves static files.
+the pipeline pulls a ~96 MB OSM extract, a 64 MB R5 jar, and a network cache, which have
+no business in a repo that serves static files.
 
 ## Repository layout
 

@@ -69,8 +69,11 @@ the open question below.
   Lincoln.
 - **Routing engine**: `r5py` (Python wrapper for Conveyal R5). It natively computes
   travel time over a departure-time window and returns a chosen percentile (median) —
-  exactly the methodology below. Requires Java 21 (documented in the README; a conda
-  environment with conda-forge `openjdk` is the recommended setup).
+  exactly the methodology below. **Requires Java 22 or newer** — r5py's conda recipe
+  claims `openjdk >=21`, but it passes `--enable-native-access=ALL-UNNAMED`, a flag that
+  only exists from JDK 22, so on Java 21 the JVM refuses to start. `environment.yml`
+  pins `openjdk=25` and keeps the JDK inside the environment, leaving the system Java
+  untouched.
 
 ### Methodology (state these publicly, in methodology.md)
 
@@ -177,7 +180,7 @@ output/
   panels/*.png
 methodology.md
 README.md
-environment.yml            # conda env incl. openjdk 21
+environment.yml            # conda env incl. openjdk 25
 ```
 
 Git: `git init`, push to GitHub. Commit `src/`, `config.yml`, `data/origins.csv`,
@@ -216,8 +219,8 @@ get them home.
   exactly how this was computed," and the repo is what backs that up.
 - **Published page**: `loganserv44.github.io/where-the-bus-goes/`, deployed from the
   separate site repo via Task 7. The two repos stay separate deliberately: the pipeline
-  pulls a ~250 MB OSM extract and an R5 network cache, none of which belongs in a repo
-  whose job is serving static files.
+  pulls a ~96 MB OSM extract, a 64 MB R5 jar, and a network cache, none of which belongs
+  in a repo whose job is serving static files.
 
 ### Still open
 

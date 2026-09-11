@@ -1,0 +1,20 @@
+{
+  "generated_utc": "2026-09-11T22:29:21+00:00",
+  "files": {
+    "gtfs.zip": {
+      "url": "https://startran.connexionz.net/rtt/public/resource/gtfs.zip",
+      "sha256": "289625b154248c981b534ff007e2a788b07fd23944873b0c3a1ef8fac2354d4c",
+      "bytes": 395765,
+      "downloaded_utc": null,
+      "remote_last_modified": null,
+      "note": "hash computed from existing local file, not a fresh download"
+    },
+    "nebraska-latest.osm.pbf": {
+      "url": "https://download.geofabrik.de/north-america/us/nebraska-latest.osm.pbf",
+      "sha256": "22919b170fee9a9903471d9164742f1fd1e39f8415fb0c9cbf79fa015ee2f3f7",
+      "bytes": 100331802,
+      "downloaded_utc": "2026-09-11T22:29:21+00:00",
+      "remote_last_modified": "Fri, 11 Sep 2026 00:52:48 GMT"
+    }
+  }
+}

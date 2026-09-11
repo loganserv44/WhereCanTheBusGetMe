@@ -1,10 +1,17 @@
 # --- Project data ---------------------------------------------------------
 # Everything here is regenerable via src/fetch_data.py + src/build_network.py.
-# data/raw/ holds the GTFS zip and the ~250 MB Nebraska OSM extract.
+# data/raw/ holds the GTFS zip and the ~96 MB Nebraska OSM extract.
 # data/processed/ holds the clipped .pbf, the R5 network cache, the destination
 # grid, and the basemap tile cache.
-data/raw/
+data/raw/*
 data/processed/
+
+# MANIFEST.json IS tracked. It is the provenance record the published methodology
+# cites -- source URLs, SHA-256 digests, and download timestamps for the exact inputs
+# that produced the maps. Without it a rerun cannot be checked against the original.
+# (Note the "data/raw/*" form above rather than "data/raw/": git will not descend into
+# an ignored directory, so a negation inside one has no effect.)
+!data/raw/MANIFEST.json
 
 # data/origins.csv IS tracked -- it is curated input, not derived data.
 
