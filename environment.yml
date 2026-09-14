@@ -49,7 +49,9 @@ dependencies:
   - geopandas
   - shapely
   - pyogrio          # geopandas file I/O (GeoPackage, GeoJSON)
-  - pyosmium         # clipping the Nebraska OSM extract to Lincoln
+  - pyosmium         # Python bindings for reading OSM data
+  - osmium-tool      # the `osmium extract` CLI used to clip Nebraska to Lincoln;
+                     # a separate C++ package from pyosmium despite the shared name
 
   # --- rendering ---
   - matplotlib-base

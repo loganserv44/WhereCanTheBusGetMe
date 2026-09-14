@@ -103,11 +103,28 @@ timestamp in `data/raw/MANIFEST.json`. Idempotent: skip when the file is present
 hash matches, unless `--force`.
 
 **Task 2 — Build routing inputs (`src/build_network.py`).**
-Clip Nebraska OSM to a Lincoln bbox (city limits + ~5 km buffer) with `pyosmium` →
-`data/processed/lincoln.osm.pbf`. Build `r5py.TransportNetwork(osm_pbf, [gtfs_zip])`
-(r5py caches it). Generate a regular destination grid over the clipped area — default
-150 m cells (tunable in `config.yml`), stored as `data/processed/grid.gpkg` with cell
-centroids as destination points and cell polygons for rendering.
+Split into two halves with a commit between them. The risky unknown goes first.
+
+*Part A — network (stopping point).*
+1. Install `osmium-tool` (the `osmium extract` CLI). It is a separate package from
+   `pyosmium`; hand-rolling a PBF clip in pyosmium risks dropping way nodes at the bbox
+   edge, which breaks the street network without any error.
+2. Derive the bbox from the GTFS stop extents plus a ~5 km buffer, so the clip is set
+   by the data rather than a guessed city boundary.
+3. `osmium extract --bbox ... --strategy complete_ways` → `data/processed/lincoln.osm.pbf`.
+4. Build `r5py.TransportNetwork(lincoln.osm.pbf, [gtfs.zip])`. **This is the first time
+   R5 does real work on Java 25**, which it isn't officially built for. If it fails,
+   drop the pin to JDK 22/23 and retry.
+5. Commit. **Checkpoint:** the clipped extract exists and R5 builds a Lincoln network
+   from it without error.
+
+*Part B — grid and verification.*
+6. Generate a regular 150 m destination grid over the bbox in a metric CRS (UTM 14N,
+   EPSG:32614), with cell polygons for rendering and WGS84 centroids for r5py →
+   `data/processed/grid.gpkg`. Tunable in `config.yml`.
+7. Verification: one real trip from the downtown transit center to UNL City Campus at
+   Tue 08:00 returns a plausible transit itinerary.
+8. Commit.
 
 **Task 3 — Compute travel-time grids (`src/compute_isochrones.py`).**
 For each (origin × scenario): `r5py.TravelTimeMatrixComputer` from the origin to all grid
@@ -133,8 +150,13 @@ optional dissolve-and-smooth to polygons with a raw-cell "honest pixels" mode av
 via config. Origin marker; muted basemap (CartoDB Positron via `contextily`, tiles
 cached); identical fixed extent across all four panels; Sunday panel = basemap + marker +
 "No StarTran service" caption. Footer: feed version + date, 800 m walk limit, one-line
-methodology. Export `output/panels/{origin}.png` at ~200 dpi + a contact sheet. Load the
-`dataviz` skill before choosing the color ramp.
+methodology. Export two versions of each figure:
+- `output/panels/{origin}.png` at ~200 dpi — the archive and print copy, kept in this repo
+- `output/web/{origin}.webp` at ~2400 px wide — what the site serves. Basemap imagery
+  compresses poorly, so a 200 dpi four-panel PNG can run 2–3 MB; the WebP should land
+  around 300–600 KB, which keeps the whole page near 2–3 MB on a phone.
+
+Plus a contact sheet. Load the `dataviz` skill before choosing the color ramp.
 
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
@@ -144,9 +166,14 @@ The finished panels are published to the existing personal site repo
 (`loganserv44/loganserv44.github.io`) as a self-contained subfolder, matching the pattern
 already used by `mail-in-ballot-search/` and `profsearch/`. `publish.py` takes the site
 repo path (config or `--site-repo`) and:
-- copies `output/panels/*.png` → `where-the-bus-goes/panels/`
-- copies `output/isochrones/*.geojson` → `where-the-bus-goes/data/` (unused by the v1
-  page, but it makes an interactive version additive later)
+- copies `output/web/*.webp` → `where-the-bus-goes/panels/` (the web-sized images, not
+  the 200 dpi archive PNGs)
+- does **not** copy the GeoJSON. The v1 page doesn't use it, and anything committed to
+  the site repo stays in its git history for good. Ship it when an interactive version
+  actually needs it.
+
+Publish to the site repo when the maps are final, not after every tweak: each
+republished image set stays in the site's history permanently.
 - renders `where-the-bus-goes/index.html` from a template, injecting the feed version,
   download date, scenario dates, and the methodology summary so the page cannot drift
   from what actually ran
@@ -177,7 +204,8 @@ notebooks/
 output/
   grids/*.parquet
   isochrones/*.geojson
-  panels/*.png
+  panels/*.png             # 200 dpi archive copies
+  web/*.webp               # web-sized copies published to the site
 methodology.md
 README.md
 environment.yml            # conda env incl. openjdk 25
