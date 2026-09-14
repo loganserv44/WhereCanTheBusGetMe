@@ -1,8 +1,9 @@
 # --- Project data ---------------------------------------------------------
 # Everything here is regenerable via src/fetch_data.py + src/build_network.py.
 # data/raw/ holds the GTFS zip and the ~96 MB Nebraska OSM extract.
-# data/processed/ holds the clipped .pbf, the R5 network cache, the destination
-# grid, and the basemap tile cache.
+# data/processed/ holds the clipped .pbf and its .json sidecar, the destination
+# grid, and the basemap tile cache. (The R5 network cache is NOT here: r5py writes
+# it to %LOCALAPPDATA%\r5py and purges entries older than two weeks.)
 data/raw/*
 data/processed/
 

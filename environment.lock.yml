@@ -82,6 +82,7 @@ dependencies:
   - libarrow-dataset=25.0.0=h7d8d6a5_3_cpu
   - libarrow-substrait=25.0.0=hffb5221_3_cpu
   - libblas=3.11.0=11_h8455456_mkl
+  - libboost=1.90.0=h9dfe17d_2
   - libbrotlicommon=1.2.0=hf02afa3_4
   - libbrotlidec=1.2.0=h84f9c24_4
   - libbrotlienc=1.2.0=he2a975b_4
@@ -150,6 +151,7 @@ dependencies:
   - openjpeg=2.5.4=h90fa87c_2
   - openssl=3.6.4=hf411b9b_0
   - orc=2.3.1=hf7eca67_0
+  - osmium-tool=1.19.1=h60971b7_0
   - packaging=26.3=pyhc364b38_0
   - pandas=3.0.5=py312h95189c4_1
   - pcre2=10.47=h8466c1e_1

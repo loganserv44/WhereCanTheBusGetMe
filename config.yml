@@ -1,0 +1,23 @@
+# Pipeline configuration.
+#
+# Settings that change results live here rather than in the scripts, so a run can be
+# described completely by this file plus data/raw/MANIFEST.json. Sections are added as
+# the tasks that use them are built.
+
+paths:
+  gtfs: data/raw/gtfs.zip
+  osm_source: data/raw/nebraska-latest.osm.pbf
+  osm_clipped: data/processed/lincoln.osm.pbf
+
+network:
+  # The OSM clip is the GTFS stop extent plus this buffer. A stop near the edge of the
+  # box still needs the streets around it for walk access and egress; walk legs are
+  # capped at ~800 m, so 5 km is generous, but the clip is cheap and a street network
+  # truncated at the edge fails silently (trips just look worse), not loudly.
+  bbox_buffer_km: 5
+
+  # Ceiling for the R5 JVM heap. r5py's default is 80% of *total* RAM (~12 GB on a
+  # 16 GB machine) regardless of what else is running; if R5 grew past free memory,
+  # Windows would page to disk. A network the size of Lincoln fits well within 4 G.
+  # If R5 reports OutOfMemoryError, raise this.
+  jvm_max_memory: 4G

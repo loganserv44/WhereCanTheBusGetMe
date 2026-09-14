@@ -21,6 +21,12 @@
 #               declared dependency understates the real requirement, so pin >=22
 #               explicitly rather than trusting the metadata.
 #
+#               Don't raise it past 25 casually either. On JDK 25 the protobuf
+#               library bundled inside the R5 jar prints "sun.misc.Unsafe::
+#               arrayBaseOffset ... will be removed in a future release". That is
+#               only a warning today, but it becomes a hard failure on whichever JDK
+#               actually removes the method. Verified working on 25.0.2.
+#
 #   python=3.12 The geospatial stack is best-tested here. Python 3.13 works but
 #               pyogrio -- geopandas' default I/O engine -- had no 3.13 wheel at the
 #               time of writing, which forces a fallback engine for no benefit.

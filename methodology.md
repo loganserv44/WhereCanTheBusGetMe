@@ -123,6 +123,33 @@ exceptions and will be revised. **Scenario dates should therefore be chosen clos
 feed's start date and screened for holidays manually**, rather than trusting
 `calendar_dates.txt` to flag them.
 
+## Street network (Task 2)
+
+| | |
+| --- | --- |
+| Source | Geofabrik Nebraska extract, SHA-256 `22919b17…f2f7` (see `data/raw/MANIFEST.json`) |
+| Clip tool | osmium-tool 1.19.1, `extract --strategy complete_ways` |
+| Clip box (W, S, E, N) | `-96.84854, 40.68099, -96.53426, 40.92480` |
+| How the box was set | Extent of all 811 GTFS stops, padded by 5 km |
+| Box size | ~26.5 × 27.0 km (714 km²) |
+| Clipped extract | 11.0 MB: 1,410,694 nodes, 214,838 ways, 6,485 relations |
+| Routing engine | R5 v7.5.1 via r5py 1.1.7, on OpenJDK 25.0.2 (Azul Zulu) |
+| Network extent as built | `-96.91052, 40.59033, -96.46381, 41.01681` |
+
+**Why the box comes from the stops.** A hand-drawn city boundary would have to be
+maintained by hand. The stop extent follows the feed: if StarTran extends a route, the
+next run's clip grows with it.
+
+**Why a 5 km buffer.** Walk legs are capped at about 800 m, so a stop near the edge only
+needs roughly a kilometre of surrounding streets. The extra margin costs almost nothing
+(the clip takes seconds) and rules out a street network truncated at the boundary, which
+would make edge trips look slower or unreachable without raising any error.
+
+**Why `complete_ways`.** It keeps every road that crosses the box edge whole, instead of
+cutting it at the boundary. That is why the network R5 built extends past the clip box.
+This is expected, and it means the destination grid is laid out over the clip box, not
+over the network's extent.
+
 ## Routing parameters
 
 *Filled in during Task 3.*

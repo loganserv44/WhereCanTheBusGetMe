@@ -118,6 +118,15 @@ Split into two halves with a commit between them. The risky unknown goes first.
 5. Commit. **Checkpoint:** the clipped extract exists and R5 builds a Lincoln network
    from it without error.
 
+   **Part A DONE (2026-09-14).** Clip: 100.3 MB → 11.0 MB in 3.5 s. R5 v7.5.1 built the
+   network on Java 25.0.2 in 16.6 s using ~0.47 GB of heap (capped at 4 GB via
+   `config.yml`). Two findings for Part B:
+   - The built network's extent (`-96.911, 40.590, -96.464, 41.017`) is larger than the
+     clip box, because `complete_ways` keeps whole every road crossing the edge. That
+     is expected. **The grid must be built from the clip box, not `network.extent`.**
+   - A 150 m grid over the box is ~31,700 cells, and most of the buffer is farmland no
+     trip can reach. Consider limiting cells to those within walking distance of a stop.
+
 *Part B — grid and verification.*
 6. Generate a regular 150 m destination grid over the bbox in a metric CRS (UTM 14N,
    EPSG:32614), with cell polygons for rendering and WGS84 centroids for r5py →
@@ -188,7 +197,8 @@ Final URL: `https://loganserv44.github.io/where-the-bus-goes/`
 config.yml                 # scenarios, bands, grid size, walk limit/speed, bbox
 data/
   raw/          gtfs.zip, nebraska-latest.osm.pbf, MANIFEST.json   (gitignored)
-  processed/    lincoln.osm.pbf, grid.gpkg, network cache, tiles/  (gitignored)
+  processed/    lincoln.osm.pbf (+ .json sidecar), grid.gpkg, tiles/  (gitignored)
+                # R5's built network is cached by r5py in %LOCALAPPDATA%\r5py, not here
   origins.csv
 src/
   fetch_data.py
