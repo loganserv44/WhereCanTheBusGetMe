@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Task 2 -- build the routing inputs.
 
-Part A (implemented):
   1. Derive a bounding box from the GTFS stop extents plus a buffer.
   2. Clip the Nebraska OSM extract to it with osmium-tool.
   3. Have R5 build a TransportNetwork from the clip and the GTFS feed.
+  4. Lay a regular destination grid over the bounding box.
 
-Part B (not yet): the destination grid.
+The grid is laid over the clip box, not over the extent R5 reports for the built
+network. The clip keeps whole every road crossing the box edge, so the network's
+extent runs kilometres past the box into countryside no trip reaches.
 
 The bounding box comes from where the stops actually are rather than a city boundary
 typed in by hand, so it follows the feed if StarTran extends a route.
@@ -80,16 +82,24 @@ def section(title: str) -> None:
 # --------------------------------------------------------------------------
 # step 1: bounding box
 # --------------------------------------------------------------------------
+def read_stops(gtfs_zip: Path) -> pd.DataFrame:
+    with zipfile.ZipFile(gtfs_zip) as zf, zf.open("stops.txt") as fh:
+        stops = pd.read_csv(fh, usecols=["stop_id", "stop_lat", "stop_lon"],
+                            dtype={"stop_id": str}, encoding="utf-8-sig")
+    stops["stop_lat"] = stops["stop_lat"].astype(float)
+    stops["stop_lon"] = stops["stop_lon"].astype(float)
+    return stops
+
+
 def stop_extent_bbox(gtfs_zip: Path, buffer_km: float) -> tuple[float, float, float, float]:
     """Return (west, south, east, north) around every stop, padded by buffer_km.
 
     The longitude buffer is scaled by the cosine of the median stop latitude: at
     Lincoln's ~40.8 N a degree of longitude is ~84 km, not 111.
     """
-    with zipfile.ZipFile(gtfs_zip) as zf, zf.open("stops.txt") as fh:
-        stops = pd.read_csv(fh, usecols=["stop_lat", "stop_lon"], encoding="utf-8-sig")
-    lat = stops["stop_lat"].astype(float)
-    lon = stops["stop_lon"].astype(float)
+    stops = read_stops(gtfs_zip)
+    lat = stops["stop_lat"]
+    lon = stops["stop_lon"]
 
     ref_lat = lat.median()
     dlat = buffer_km / KM_PER_DEG_LAT
@@ -236,6 +246,75 @@ def build_network(osm: Path, gtfs: Path, max_memory: str, allow_gtfs_errors: boo
 
 
 # --------------------------------------------------------------------------
+# step 4: destination grid
+# --------------------------------------------------------------------------
+def build_grid(bbox: tuple[float, float, float, float], gtfs: Path,
+               cell_size_m: float, crs: str, out_path: Path) -> None:
+    """Write a regular grid of square cells covering the clip box to a GeoPackage.
+
+    Two layers:
+      cells      polygons in the metric CRS, for rendering
+      centroids  points in WGS84, the destinations handed to r5py
+
+    Cell ids come from the cell's absolute position on a lattice anchored at the
+    projection origin (id = row * 100000 + col), not from a running count. So a given
+    patch of ground keeps its id if the box is later resized, and results from
+    different runs join cleanly.
+
+    Every cell also records its straight-line distance to the nearest stop. Walk legs
+    are capped (~800 m), so cells far from any stop can't be reached by transit.
+    Keeping the distance lets a later step drop those cells by filtering, rather than
+    by rebuilding the grid.
+    """
+    import geopandas as gpd
+    import numpy as np
+    import shapely
+
+    started = time.perf_counter()
+    clip_box = gpd.GeoSeries([shapely.box(*bbox)], crs="EPSG:4326").to_crs(crs).iloc[0]
+    minx, miny, maxx, maxy = clip_box.bounds
+
+    ix0, iy0 = math.floor(minx / cell_size_m), math.floor(miny / cell_size_m)
+    ix1, iy1 = math.ceil(maxx / cell_size_m), math.ceil(maxy / cell_size_m)
+    ix, iy = np.meshgrid(np.arange(ix0, ix1), np.arange(iy0, iy1))
+    ix, iy = ix.ravel(), iy.ravel()
+    xmin, ymin = ix * cell_size_m, iy * cell_size_m
+    cx, cy = xmin + cell_size_m / 2, ymin + cell_size_m / 2
+
+    # The box is a rectangle in lon/lat but slightly rotated in UTM, so keep only the
+    # cells whose centroid falls inside it rather than everything in its bounds.
+    inside = shapely.contains_xy(clip_box, cx, cy)
+    ix, iy, xmin, ymin, cx, cy = (a[inside] for a in (ix, iy, xmin, ymin, cx, cy))
+    ids = iy.astype("int64") * 100_000 + ix.astype("int64")
+
+    stops = read_stops(gtfs)
+    stops_gdf = gpd.GeoDataFrame(
+        geometry=gpd.points_from_xy(stops["stop_lon"], stops["stop_lat"]), crs="EPSG:4326"
+    ).to_crs(crs)
+    centroids = gpd.GeoDataFrame({"id": ids}, geometry=gpd.points_from_xy(cx, cy), crs=crs)
+    nearest = gpd.sjoin_nearest(centroids, stops_gdf, how="left", distance_col="near_stop_m")
+    near_stop_m = nearest.groupby("id")["near_stop_m"].min().reindex(ids).round(1).to_numpy()
+
+    cells = gpd.GeoDataFrame(
+        {"id": ids, "ix": ix, "iy": iy, "near_stop_m": near_stop_m},
+        geometry=shapely.box(xmin, ymin, xmin + cell_size_m, ymin + cell_size_m),
+        crs=crs,
+    )
+    centroids["near_stop_m"] = near_stop_m
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.unlink(missing_ok=True)  # a stale file would keep old layers alongside new
+    cells.to_file(out_path, layer="cells", driver="GPKG")
+    centroids.to_crs("EPSG:4326").to_file(out_path, layer="centroids", driver="GPKG")
+
+    print(f"  {len(cells):,} cells of {cell_size_m:g} m in {crs}")
+    for limit in (800, 1000, 2000):
+        n = int((near_stop_m <= limit).sum())
+        print(f"    within {limit:>5,} m of a stop: {n:>7,} ({n / len(cells):.0%})")
+    print(f"  wrote {out_path} ({mb(out_path)}) in {time.perf_counter() - started:.1f} s")
+
+
+# --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -274,9 +353,15 @@ def main() -> int:
     status = build_network(osm_clipped, gtfs, str(cfg["network"]["jvm_max_memory"]),
                            args.allow_gtfs_errors)
     print()
-    if status == 0:
-        print("Part A checkpoint reached: clipped extract exists and R5 built the network.")
-    return status
+    if status != 0:
+        return status
+
+    section("STEP 4 - DESTINATION GRID")
+    build_grid(bbox, gtfs, float(cfg["grid"]["cell_size_m"]), str(cfg["grid"]["crs"]),
+               Path(cfg["paths"]["grid"]))
+    print()
+    print("Routing inputs built: clipped extract, R5 network, destination grid.")
+    return 0
 
 
 if __name__ == "__main__":

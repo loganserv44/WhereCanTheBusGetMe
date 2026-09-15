@@ -9,8 +9,10 @@ The deliverable is a set of side-by-side panels: same origin, four departure sce
 (Tue 8am, Tue 9pm, Sat 6pm, Sun noon). The comparison is the point, not any single map.
 StarTran runs no Sunday service, so the fourth panel is blank.
 
-> **Status: planning / not yet implemented.** Nothing in `src/` exists yet. See
-> [PLAN.md](PLAN.md) for the full scope, methodology, and task breakdown.
+> **Status: in progress.** Tasks 0–2 are done: the no-Sunday-service premise is
+> verified, the data is fetched, and the routing network is built and checked against
+> known trips. No maps yet — travel-time computation (Task 3) is next. See
+> [PLAN.md](PLAN.md) for the full scope and task breakdown.
 
 ## Method (short version)
 
@@ -63,7 +65,9 @@ On first use r5py downloads the R5 routing engine jar (~64 MB) into its own cach
 
 ```bash
 python src/fetch_data.py          # download GTFS + OSM
+python src/premise_check.py       # verify the no-Sunday-service premise against the feed
 python src/build_network.py       # clip OSM, build R5 network, generate destination grid
+python src/verify_network.py      # check the network against trips with known answers
 python src/compute_isochrones.py  # travel-time grids per origin x scenario
 python src/render_panels.py       # the comparison figures
 python src/publish.py             # copy panels + page into the Pages site repo

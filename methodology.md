@@ -150,9 +150,83 @@ cutting it at the boundary. That is why the network R5 built extends past the cl
 This is expected, and it means the destination grid is laid out over the clip box, not
 over the network's extent.
 
+## Destination grid (Task 2)
+
+Travel time is computed from each origin to the centre of every cell in a regular grid.
+
+| | |
+| --- | --- |
+| Cell size | 150 m square |
+| Projection | UTM zone 14N (EPSG:32614), which is metric and nearly distortion-free over Lincoln |
+| Coverage | Every cell whose centre falls inside the clip box |
+| Cells | 31,922 |
+| Within 800 m of a stop | 8,765 (27%) |
+| Within 1 km of a stop | 9,994 (31%) |
+| Within 2 km of a stop | 13,895 (44%) |
+
+**Stable cell ids.** A cell's id comes from its position on a fixed 150 m lattice
+(`id = row × 100000 + column`), not from a running count. The same patch of ground keeps
+its id if the box is later resized, so results from different runs can be joined.
+
+**Distance to nearest stop.** Each cell records its straight-line distance to the nearest
+stop. Walk legs are capped at about 800 m, so most of the box can't be reached by
+transit. It is kept in the grid so it can be excluded by filtering later rather than by
+rebuilding the grid.
+
+## Network verification (Task 2)
+
+A network that builds without errors can still route badly. A truncated street clip,
+stops that fail to link to streets, or a timezone mix-up all produce bad travel times
+with no error. So the network was checked against trips with known right answers
+(`python src/verify_network.py`), departing Tuesday 2026-09-15 at 08:00, with walking at
+4.8 km/h and walk legs capped at 10 minutes.
+
+| Trip | Expected | Result |
+| --- | --- | --- |
+| Downtown (11th & L) → Nebraska Union, ~850 m | Walking is fastest | Walk 1,158 m, **14.8 min**. The earliest bus option (route 25 Vine) arrives at 17.8 min. |
+| Downtown (11th & L) → East Campus (N 33rd & Holdrege), ~3.5 km | Transit is fastest | **28.7 min** door to door: walk 538 m, route 42 Bethany for 4.6 km, walk 446 m. Walking the whole way takes 58.5 min. |
+
+The walking time checks out independently. The two points are 716 m apart north–south
+and 469 m east–west, so walking downtown's street grid covers about 1.19 km, which is
+14.8 minutes at 4.8 km/h.
+
+**How trips were compared.** Each option was timed door to door, from the 08:00
+departure to arrival. R5 returns options that start at different moments within the
+departure window, and time spent at the origin before an option's first leg belongs to
+no leg. A first version of this check added up the legs instead. That made a two-bus
+option to the Nebraska Union look like 8 minutes, and the check "failed". The network
+was right; the measurement was wrong.
+
+**One origin to the whole grid.** With the settings Task 3 will use (a 60-minute
+departure window, median travel time), routing from downtown to all 31,922 cells took
+2.0 seconds. At Tuesday 08:00:
+
+| Within | Cells | Area |
+| --- | --- | --- |
+| 15 min | 119 | ~3 km² |
+| 30 min | 1,166 | ~26 km² |
+| 45 min | 3,539 | ~80 km² |
+| 60 min | 5,476 | ~123 km² |
+
+The 15-minute figure matches walking alone: 15 minutes on a street grid covers a
+diamond of about 3 km². That's expected, since the median over the window includes
+waiting for a bus.
+
+No reachable cell was more than 781 m from a stop, so every reachable cell fell within
+the 800 m walk limit. Trimming the grid to cells near stops would therefore lose
+nothing. It would also save nothing at 2 seconds per origin, so the full grid is kept.
+
 ## Routing parameters
 
 *Filled in during Task 3.*
+
+Two r5py defaults differ from this methodology and must be overridden on every routing
+call, or travel times will be quietly wrong:
+
+- **Walking speed** defaults to 3.6 km/h. The methodology specifies **4.8 km/h**
+  (`speed_walking=4.8`).
+- **Departure time window** defaults to 10 minutes. The methodology specifies **60
+  minutes** (`departure_time_window=timedelta(minutes=60)`).
 
 ## Grid and rendering
 

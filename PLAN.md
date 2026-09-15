@@ -131,9 +131,25 @@ Split into two halves with a commit between them. The risky unknown goes first.
 6. Generate a regular 150 m destination grid over the bbox in a metric CRS (UTM 14N,
    EPSG:32614), with cell polygons for rendering and WGS84 centroids for r5py →
    `data/processed/grid.gpkg`. Tunable in `config.yml`.
-7. Verification: one real trip from the downtown transit center to UNL City Campus at
-   Tue 08:00 returns a plausible transit itinerary.
+7. Verification (`src/verify_network.py`): trips with known right answers at Tue 08:00.
+   Downtown → UNL City Campus is only ~850 m, so it checks that *walking* wins.
+   Downtown → UNL East Campus (~3.5 km) checks that *transit* wins. One origin → the
+   full grid times a Task 3–style run.
 8. Commit.
+
+   **Part B DONE (2026-09-15).** Grid: 31,922 cells of 150 m, 12.2 MB, built in 2 s.
+   Verification passed: walking to the Nebraska Union takes 14.8 min and the earliest
+   bus arrives at 17.8 min; East Campus takes 28.7 min on route 42 Bethany against 58.5
+   min on foot. One origin → the full grid takes **2.0 s**. Decisions and findings:
+   - **Full grid kept.** No reachable cell lies beyond 781 m from a stop, so trimming
+     would lose nothing, but at 2 s per origin it would save nothing either.
+   - **Compare itineraries door to door.** Adding up `DetailedItineraries` legs misses
+     time spent at the origin before the first leg, and made a two-bus option look
+     faster than walking. The first version of the check failed for exactly this reason.
+   - **Carry into Task 3:** r5py defaults to walking at 3.6 km/h and a 10-minute
+     departure window. The methodology says 4.8 km/h and 60 minutes, so set both
+     explicitly on every call.
+   - Task 3's compute is trivial: 16 origin × scenario runs at ~2 s each.
 
 **Task 3 — Compute travel-time grids (`src/compute_isochrones.py`).**
 For each (origin × scenario): `r5py.TravelTimeMatrixComputer` from the origin to all grid

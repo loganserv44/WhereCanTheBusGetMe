@@ -8,6 +8,7 @@ paths:
   gtfs: data/raw/gtfs.zip
   osm_source: data/raw/nebraska-latest.osm.pbf
   osm_clipped: data/processed/lincoln.osm.pbf
+  grid: data/processed/grid.gpkg
 
 network:
   # The OSM clip is the GTFS stop extent plus this buffer. A stop near the edge of the
@@ -21,3 +22,14 @@ network:
   # Windows would page to disk. A network the size of Lincoln fits well within 4 G.
   # If R5 reports OutOfMemoryError, raise this.
   jvm_max_memory: 4G
+
+grid:
+  # Destination grid: travel time is computed from each origin to the centroid of every
+  # cell. 150 m is about a short city block, fine enough that isochrone edges don't look
+  # like staircases, while keeping the cell count in the tens of thousands.
+  cell_size_m: 150
+
+  # Cells are laid out in UTM zone 14N, a metric projection that is nearly
+  # distortion-free over Lincoln, so every cell really is 150 m square. Centroids
+  # are converted to WGS84 for r5py.
+  crs: EPSG:32614
