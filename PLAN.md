@@ -47,13 +47,18 @@ the open question below.
 
 ### Decisions (previously open)
 
-- **Output format**: static PNG panels — matplotlib + muted basemap tiles. One 1×4
-  comparison figure per origin, plus a combined contact sheet. GeoJSON is exported as a
-  reusable intermediate but there is no web map in v1.
+- **Output format**: static images, one figure per origin with a **2×2 grid** of panels
+  (Tue 8am / Tue 8pm / Sat 5pm / Sun noon), built to read on a phone. The 24-panel
+  contact sheet stays as an internal checking tool. GeoJSON is exported as a reusable
+  intermediate but there is no web map in v1. (Changed 2026-09-15 from a 1×4 row, after
+  reviewing the Task 3 preview.)
+- **Units**: US customary wherever a reader or editor sees them (miles, square miles,
+  feet, mph), including `config.yml`. The code converts to metric internally where
+  libraries require it (UTM meters, r5py's km/h). Decided 2026-09-15; see "Before Task 5".
 - **Origins**: the pipeline takes an arbitrary origin list. Candidates are proposed with
   rationale from the GTFS + city data (see Task 4), and the final six were approved before
   the expensive full run.
-- **Overlays**: none. Bare isochrone bands + origin marker + street basemap. "Can you
+- **Overlays**: none. Bare isochrone bands + origin marker + a custom basemap drawn from OSM (see Task 5). "Can you
   reach the grocery store" is answered by choosing origins near those trips, not by
   drawing pins.
 - **Sunday panel**: truly blank — origin marker and a "No StarTran service" caption, no
@@ -184,20 +189,55 @@ grocery cluster; one low-frequency edge-of-network stop (worst case). **Done: si
 Briarpark, 48th & R), with rationale in `data/origins.csv`. User picks 3–5
 before the full compute run. `origins.csv` columns: `slug,name,lat,lon,note`.
 
-**Task 5 — Render panels (`src/render_panels.py`).**
-Per origin, one 1×4 figure (Tue 8am / Tue 8pm / Sat 5pm / Sun noon). Grid cells shaded
-by band with a colorblind-safe 4-step sequential ramp; unreachable cells unfilled;
-optional dissolve-and-smooth to polygons with a raw-cell "honest pixels" mode available
-via config. Origin marker; muted basemap (CartoDB Positron via `contextily`, tiles
-cached); identical fixed extent across all four panels; Sunday panel = basemap + marker +
-"No StarTran service" caption. Footer: feed version + date, 800 m walk limit, one-line
-methodology. Export two versions of each figure:
+**Before Task 5 — switch to US units.** *Pending; agreed 2026-09-15.* Convert the
+`config.yml` settings and everything reader-facing to US units, rerun Tasks 2–3 (about
+20 s), and update the docs in the same change:
+
+| Setting | Now | Becomes |
+| --- | --- | --- |
+| Walking speed | 4.7 km/h | 2.9 mph |
+| Walk limit | 10 min (~780 m) | 10 min (about half a mile) |
+| Grid square | 150 m | 500 ft (152.4 m) |
+| Grid trim | 1 km from a stop | 0.6 mi (still lossless; farthest reachable cell is ~0.48 mi) |
+| Clip buffer | 5 km | 3 mi |
+| Reported area | km² | sq mi |
+
+Until the conversion runs, `methodology.md`, `README.md`, the preview and this plan still
+show metric. Keep metric in parentheses only when quoting a source (e.g. the 1.31 m/s
+meta-analysis figure).
+
+**Task 5 — Render the final figures (`src/render_panels.py`).** *Not started.* The design
+was agreed 2026-09-15 after reviewing the Task 3 preview, which was hard to read: nothing
+to orient by, postage-stamp panels, staircase edges, an abstract km² number, jargon in
+the copy, and the key facts (like a last bus at 7:46pm) never stated on the map.
+
+- **Layout:** one figure per origin, a 2×2 grid (Tue 8am, Tue 8pm / Sat 5pm, Sun noon),
+  the same extent in all four panels, sized to read on a phone.
+- **Basemap:** drawn from our OSM extract rather than map tiles: highways and main
+  streets, water and parks, the city limits, and about 8 labeled landmarks (Downtown,
+  UNL City & East Campus, Airport, Gateway, SouthPointe…). Muted so the bands stay
+  dominant. No tile service or attribution line needed.
+- **Band shapes:** smoothed, contour-like shapes instead of 500-ft staircases, with no
+  white seams between bands. Keep a raw-cell "honest pixels" mode in `config.yml` for
+  checking, and note the few hundred feet of edge precision lost in the methodology.
+- **Color:** the one-hue blue ordinal ramp validated for the preview (darkest = reached
+  soonest). Re-run the palette validator if any step changes.
+- **Headline per panel:** square miles reachable within an hour, plus the change from
+  Tuesday 8am (e.g. "10 sq mi · down 77%"), so the collapse reads without math.
+- **Copy:** a plain-language title and subtitle; method details move to a small footer
+  and the methodology. Readable dates ("Tue, Sept 15"). Bigger text.
+- **Callouts:** short notes on the map for the key facts, e.g. "Last bus left 7:46pm"
+  (Bryan East, Tue 8pm) and "No buses run on Sundays".
+- **Origin:** a larger, labeled marker. Bus routes are faint context only.
+
+Export two versions of each figure:
 - `output/panels/{origin}.png` at ~200 dpi — the archive and print copy, kept in this repo
 - `output/web/{origin}.webp` at ~2400 px wide — what the site serves. Basemap imagery
   compresses poorly, so a 200 dpi four-panel PNG can run 2–3 MB; the WebP should land
   around 300–600 KB, which keeps the whole page near 2–3 MB on a phone.
 
-Plus a contact sheet. Load the `dataviz` skill before choosing the color ramp.
+The contact sheet (`src/preview_isochrones.py`) stays as the checking view. Load the
+`dataviz` skill before any color or layout change.
 
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
@@ -229,14 +269,17 @@ Final URL: `https://loganserv44.github.io/where-the-bus-goes/`
 config.yml                 # scenarios, bands, grid size, walk limit/speed, bbox
 data/
   raw/          gtfs.zip, nebraska-latest.osm.pbf, MANIFEST.json   (gitignored)
-  processed/    lincoln.osm.pbf (+ .json sidecar), grid.gpkg, tiles/  (gitignored)
+  processed/    lincoln.osm.pbf (+ .json sidecar), grid.gpkg, basemap layers  (gitignored)
                 # R5's built network is cached by r5py in %LOCALAPPDATA%\r5py, not here
   origins.csv
 src/
+  premise_check.py         # Task 0: verify no Sunday service
   fetch_data.py
   build_network.py
+  verify_network.py        # Task 2: check the network against known trips
   compute_isochrones.py
-  render_panels.py
+  preview_isochrones.py    # contact sheet of every result, for checking
+  render_panels.py         # Task 5: final per-origin figures (not started)
   publish.py               # copy panels + render index.html into the Pages site repo
   common.py                # config load, slugify, paths, scenario-date derivation
   templates/
@@ -299,6 +342,9 @@ get them home.
   evening scenarios moved to Tue 8pm and Sat 5pm, so every 60-minute window sits inside
   service and all four panels measure the same thing. The 9:30pm shift-worker story is
   told by the Bryan Health East Campus origin instead of by a near-empty panel.
+- A more meaningful panel headline, such as the share of Lincoln residents or jobs
+  reachable, would need census data (a new source). Deferred on 2026-09-15 in favor of
+  sq mi plus change from Tuesday 8am.
 - License for the repo (MIT for the code vs. CC BY for the maps, or both).
 - Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
   start linking out to the project pages. Out of scope here, but this project makes it
