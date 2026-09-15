@@ -9,6 +9,7 @@ paths:
   osm_source: data/raw/nebraska-latest.osm.pbf
   osm_clipped: data/processed/lincoln.osm.pbf
   grid: data/processed/grid.gpkg
+  origins: data/origins.csv
 
 network:
   # The OSM clip is the GTFS stop extent plus this buffer. A stop near the edge of the
@@ -33,3 +34,64 @@ grid:
   # distortion-free over Lincoln, so every cell really is 150 m square. Centroids
   # are converted to WGS84 for r5py.
   crs: EPSG:32614
+
+  # Cells farther than this (straight line) from every stop are dropped before routing.
+  # With TRANSIT + WALK, R5 caps *all* walking at max_time_walking, including a trip
+  # that walks the whole way, so a cell can only be reached if it lies within one walk
+  # leg of a stop. Tested 2026-09-15 from downtown: the farthest reachable cell was
+  # 781 m from a stop. (WALK-only routing ignores the cap and reached cells 1.7 km
+  # from any stop, but this project never routes walk-only.) 1,000 m leaves margin.
+  max_distance_to_stop_m: 1000
+
+routing:
+  # 4.7 km/h (1.31 m/s): the usual outdoor walking pace of healthy adults, from a
+  # meta-analysis of 35 studies and 14,015 participants ("Outdoor Walking Speeds of
+  # Apparently Healthy Adults: A Systematic Review and Meta-analysis", PubMed 33030707).
+  # r5py's own default is 3.6 km/h, so this must always be set.
+  speed_walking_kmh: 4.7
+
+  # Cap on every walk leg: to the first stop, between stops, from the last stop. With
+  # TRANSIT + WALK it also caps a trip that walks the whole way. 10 min at 4.7 km/h is
+  # about 780 m.
+  max_walk_minutes: 10
+
+  # R5 routes a departure every minute of this window and reports percentiles of the
+  # results; the maps show the median. r5py's default window is 10 minutes, so this must
+  # always be set.
+  departure_time_window_minutes: 60
+  percentiles: [25, 50, 75]
+
+  # Trips longer than this count as unreachable. The last travel-time band ends here.
+  max_time_minutes: 60
+  bands_minutes: [15, 30, 45, 60]
+
+# Scenario dates are real calendar days. compute_isochrones.py checks each against the
+# feed (right weekday, inside the calendar, no calendar_dates exception) before
+# routing. All four fall in one ordinary week near the start of feed 20260828, whose
+# only exception is Labor Day, 2026-09-07.
+#
+# The evening scenarios are Tuesday 8pm and Saturday 5pm, not 9pm and 6pm. Weekday
+# service ends around 9:50pm and Saturday service around 7:35pm, so a 60-minute window
+# starting at 9pm or 6pm is mostly empty, and its median wouldn't be comparable to the
+# morning's (see Task 0 in methodology.md).
+scenarios:
+  - id: tue_0800
+    label: Tuesday 8am
+    weekday: Tuesday
+    date: "2026-09-15"
+    time: "08:00"
+  - id: tue_2000
+    label: Tuesday 8pm
+    weekday: Tuesday
+    date: "2026-09-15"
+    time: "20:00"
+  - id: sat_1700
+    label: Saturday 5pm
+    weekday: Saturday
+    date: "2026-09-19"
+    time: "17:00"
+  - id: sun_1200
+    label: Sunday noon
+    weekday: Sunday
+    date: "2026-09-20"
+    time: "12:00"

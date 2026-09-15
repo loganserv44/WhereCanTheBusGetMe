@@ -6,13 +6,13 @@ How far can you actually get from a given point in Lincoln using the bus, walkin
 waiting — and how does that reach change depending on what time and day it is?
 
 The deliverable is a set of side-by-side panels: same origin, four departure scenarios
-(Tue 8am, Tue 9pm, Sat 6pm, Sun noon). The comparison is the point, not any single map.
+(Tue 8am, Tue 8pm, Sat 5pm, Sun noon). The comparison is the point, not any single map.
 StarTran runs no Sunday service, so the fourth panel is blank.
 
-> **Status: in progress.** Tasks 0–2 are done: the no-Sunday-service premise is
-> verified, the data is fetched, and the routing network is built and checked against
-> known trips. No maps yet — travel-time computation (Task 3) is next. See
-> [PLAN.md](PLAN.md) for the full scope and task breakdown.
+> **Status: in progress.** Tasks 0–4 are done: the premise is verified, the network is
+> built and checked, the six origins are chosen, and travel times are computed for every
+> origin and scenario. A preview is at `output/preview/task3_contact_sheet.png`. The
+> final map design (Task 5) is next. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 
@@ -69,6 +69,7 @@ python src/premise_check.py       # verify the no-Sunday-service premise against
 python src/build_network.py       # clip OSM, build R5 network, generate destination grid
 python src/verify_network.py      # check the network against trips with known answers
 python src/compute_isochrones.py  # travel-time grids per origin x scenario
+python src/preview_isochrones.py  # quick-look contact sheet of every result
 python src/render_panels.py       # the comparison figures
 python src/publish.py             # copy panels + page into the Pages site repo
 ```

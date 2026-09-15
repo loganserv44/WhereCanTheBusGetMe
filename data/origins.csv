@@ -1,0 +1,7 @@
+slug,name,stop_id,stop_name,lat,lon,note
+downtown,Downtown (11th & P),246,"P Street & North 11th Street, SW",40.814647,-96.705861,"Best case: most weekday trips of any stop (315), last bus 9:48pm. Also stands in for UNL City Campus, 0.9 km away."
+unl-east-campus,UNL East Campus,485,North 35th Street & East Campus Loop South,40.829506,-96.669889,UNL student: 302 weekday trips but none on Saturday; routes 24 and 25 are weekday-only.
+n27th-superior,N 27th & Superior,480,Walmart - 27th & Superior Street,40.859071,-96.678458,Suburban housing and groceries: 88 apartment buildings and 3 supermarkets within 800 m (OpenStreetMap).
+bryan-east,Bryan Health East Campus (48th & A),786,"South 48th Street & A Street, SE",40.798603,-96.653606,Shift worker: beside Bryan Health East Campus; last weekday bus 7:46pm.
+s40th-briarpark,S 40th & Briarpark,733,"South 40th Street & Briarpark Drive, SE",40.756729,-96.663244,"Worst case with service: south edge, route 56 only, 13 weekday trips, last bus 6:26pm."
+48th-r-target,48th & R (Target),500,"R Street & North 48th Street Target, N",40.817182,-96.654900,"Groceries: 4 supermarkets within 800 m (OpenStreetMap); route 44, 30 weekday trips."

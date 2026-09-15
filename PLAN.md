@@ -39,8 +39,9 @@ the open question below.
 
 ### Scope (v1)
 
-- 3–5 origin points, chosen deliberately, not "any stop"
-- 4 departure scenarios: Tue 8am, Tue 9pm, Sat 6pm, Sun noon
+- 6 origin points, chosen deliberately, not "any stop" (see Task 4)
+- 4 departure scenarios: Tue 8am, Tue 8pm, Sat 5pm, Sun noon (the evening times were
+  moved an hour earlier so their departure windows sit inside service)
 - Travel time bands: 15 / 30 / 45 / 60 min
 - Static output. No server, no live routing.
 
@@ -50,7 +51,7 @@ the open question below.
   comparison figure per origin, plus a combined contact sheet. GeoJSON is exported as a
   reusable intermediate but there is no web map in v1.
 - **Origins**: the pipeline takes an arbitrary origin list. Candidates are proposed with
-  rationale from the GTFS + city data (see Task 4), and the final 3–5 are approved before
+  rationale from the GTFS + city data (see Task 4), and the final six were approved before
   the expensive full run.
 - **Overlays**: none. Bare isochrone bands + origin marker + street basemap. "Can you
   reach the grocery store" is answered by choosing origins near those trips, not by
@@ -77,7 +78,9 @@ the open question below.
 
 ### Methodology (state these publicly, in methodology.md)
 
-- Max walking distance to/from stops: 800 m (~10 min at 4.8 km/h), applied to both the
+- Walking speed 4.7 km/h (1.31 m/s), the usual outdoor pace of healthy adults in a
+  35-study meta-analysis (PubMed 33030707).
+- Max walking time to/from stops: 10 min (~780 m at 4.7 km/h), applied to both the
   access and egress leg.
 - Departure time computed across a 60-minute window, reporting the **median** travel time
   per destination (leaving at 8:00 vs 8:04 can differ by 15 min if you just missed a
@@ -154,22 +157,35 @@ Split into two halves with a commit between them. The risky unknown goes first.
 **Task 3 — Compute travel-time grids (`src/compute_isochrones.py`).**
 For each (origin × scenario): `r5py.TravelTimeMatrixComputer` from the origin to all grid
 centroids, `departure_time_window = 60 min`, `percentiles = [25, 50, 75]`,
-`transport_modes = [TRANSIT, WALK]`, `max_time = 60 min`, walk speed 4.8 km/h, walk leg
+`transport_modes = [TRANSIT, WALK]`, `max_time = 60 min`, walk speed 4.7 km/h, walk leg
 cap ~800 m (verify the exact r5py kwarg against the installed version). Scenario datetimes
-in America/Chicago: Tue 08:00, Tue 21:00, Sat 18:00, Sun 12:00 — concrete dates derived
-in code from the feed's validity window. Output `output/grids/{origin}__{scenario}.parquet`
+in America/Chicago: Tue 08:00, Tue 20:00, Sat 17:00, Sun 12:00, on Tue 2026-09-15, Sat
+2026-09-19 and Sun 2026-09-20. The dates are set explicitly in `config.yml` and checked
+in code against the feed (right weekday, inside its validity, no calendar exception). Output `output/grids/{origin}__{scenario}.parquet`
 (cell_id, median_min) and dissolved-by-band polygons to `output/isochrones/*.geojson`.
 Sunday: skip the routing call, emit an all-null grid with a blank-panel flag.
+
+**Task 3 DONE (2026-09-15).** 6 origins × 4 scenarios = 24 grids in about 20 s, on a
+grid trimmed to 9,994 cells within 1 km of a stop. Every scenario date is checked
+against the feed before routing, and Sunday comes out as "no service" automatically.
+Within 60 minutes, downtown reaches 111 km² at Tue 8am, 26 km² at Tue 8pm and 54 km²
+at Sat 5pm. At Tue 8pm, Bryan East (1.4 km²) and Briarpark (1.3 km²) are walking only.
+Full table in `methodology.md`. A preview contact sheet is at
+`output/preview/task3_contact_sheet.png`, with its numbers in `task3_summary.csv`.
+Decisions made during the task: walking at 4.7 km/h (a 35-study meta-analysis), evening
+scenarios moved to 8pm/5pm, and six origins.
 
 **Task 4 — Propose & finalize origins (`data/origins.csv`).**
 Produce a candidate table (name, lat/lon, nearest stop, rationale). Basis: downtown
 transfer hub / high-service node (best case); UNL City Campus edge (persona A); a
 dense apartment area away from downtown (peripheral residential); a big-box retail /
-grocery cluster; one low-frequency edge-of-network stop (worst case). User picks 3–5
+grocery cluster; one low-frequency edge-of-network stop (worst case). **Done: six picked**
+(downtown, UNL East Campus, N 27th & Superior, Bryan Health East Campus, S 40th &
+Briarpark, 48th & R), with rationale in `data/origins.csv`. User picks 3–5
 before the full compute run. `origins.csv` columns: `slug,name,lat,lon,note`.
 
 **Task 5 — Render panels (`src/render_panels.py`).**
-Per origin, one 1×4 figure (Tue 8am / Tue 9pm / Sat 6pm / Sun noon). Grid cells shaded
+Per origin, one 1×4 figure (Tue 8am / Tue 8pm / Sat 5pm / Sun noon). Grid cells shaded
 by band with a colorblind-safe 4-step sequential ramp; unreachable cells unfilled;
 optional dissolve-and-smooth to polygons with a raw-cell "honest pixels" mode available
 via config. Origin marker; muted basemap (CartoDB Positron via `contextily`, tiles
@@ -250,8 +266,8 @@ Makefile) chaining fetch → build → compute → render.
    ~10–20 min transit itinerary.
 3. **Grid spot-checks**: for one origin/scenario, hand-verify 3–4 cells against Google
    Maps transit directions for the same date/time (rough agreement expected).
-4. **Scenario contrast**: Tue 9pm reachable area visibly smaller than Tue 8am; Sat 6pm
-   smaller still; Sunday blank. If Tue 9pm ≈ Tue 8am, the window or calendar handling is
+4. **Scenario contrast**: Tue 8pm reachable area visibly smaller than Tue 8am; Sat 5pm
+   smaller still; Sunday blank. If Tue 8pm ≈ Tue 8am, the window or calendar handling is
    wrong.
 5. **Panel review**: all four panels share one extent; legend, marker, footer metadata
    present; Sunday panel blank with caption.
@@ -263,7 +279,8 @@ Makefile) chaining fetch → build → compute → render.
 it actually gets them. They see the reachable area shaded by travel time, and how it
 shrinks after dark.
 
-**B** works a shift ending at 9:30pm. The Tue 9pm panel shows whether the bus can still
+**B** works a shift ending at 9:30pm. The Bryan Health East Campus origin, where the last
+weekday bus leaves at 7:46pm, shows whether the bus can still
 get them home.
 
 ### Where this lives
@@ -278,14 +295,10 @@ get them home.
 
 ### Still open
 
-- **Evening scenario times vs. the 60-minute window** (raised by Task 0, must be settled
-  before Task 3). The methodology takes the median travel time across a 60-min departure
-  window. At Tue 8am that window is uniformly served. At Tue 9pm it runs 21:00–22:00 when
-  the last bus arrives at 21:50, and at Sat 6pm it runs 18:00–19:00 when only two routes
-  operate past 19:00 — so both evening medians are computed across a largely empty
-  window. Options: shift the evening scenarios earlier (e.g. Tue 8pm / Sat 5pm) so the
-  windows sit inside service; keep the times and let the near-empty panels be the finding;
-  or vary the window length by scenario (which breaks comparability across panels).
+- ~~Evening scenario times vs. the 60-minute window~~ **Resolved 2026-09-15:** the
+  evening scenarios moved to Tue 8pm and Sat 5pm, so every 60-minute window sits inside
+  service and all four panels measure the same thing. The 9:30pm shift-worker story is
+  told by the Bryan Health East Campus origin instead of by a near-empty panel.
 - License for the repo (MIT for the code vs. CC BY for the maps, or both).
 - Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
   start linking out to the project pages. Out of scope here, but this project makes it

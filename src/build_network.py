@@ -249,7 +249,8 @@ def build_network(osm: Path, gtfs: Path, max_memory: str, allow_gtfs_errors: boo
 # step 4: destination grid
 # --------------------------------------------------------------------------
 def build_grid(bbox: tuple[float, float, float, float], gtfs: Path,
-               cell_size_m: float, crs: str, out_path: Path) -> None:
+               cell_size_m: float, crs: str, max_distance_to_stop_m: float,
+               out_path: Path) -> None:
     """Write a regular grid of square cells covering the clip box to a GeoPackage.
 
     Two layers:
@@ -261,10 +262,11 @@ def build_grid(bbox: tuple[float, float, float, float], gtfs: Path,
     patch of ground keeps its id if the box is later resized, and results from
     different runs join cleanly.
 
-    Every cell also records its straight-line distance to the nearest stop. Walk legs
-    are capped (~800 m), so cells far from any stop can't be reached by transit.
-    Keeping the distance lets a later step drop those cells by filtering, rather than
-    by rebuilding the grid.
+    Cells farther than max_distance_to_stop_m (straight line) from every stop are
+    dropped. Walks to and from stops are capped, and a street walk is never shorter
+    than the straight line, so such cells can't be reached by transit. Dropping them
+    roughly thirds the grid, and most of what goes is farmland in the clip buffer. Kept
+    cells record near_stop_m, their distance to the nearest stop.
     """
     import geopandas as gpd
     import numpy as np
@@ -295,6 +297,11 @@ def build_grid(bbox: tuple[float, float, float, float], gtfs: Path,
     nearest = gpd.sjoin_nearest(centroids, stops_gdf, how="left", distance_col="near_stop_m")
     near_stop_m = nearest.groupby("id")["near_stop_m"].min().reindex(ids).round(1).to_numpy()
 
+    n_covering = len(ids)
+    keep = near_stop_m <= max_distance_to_stop_m
+    ids, ix, iy, xmin, ymin, near_stop_m = (a[keep] for a in (ids, ix, iy, xmin, ymin, near_stop_m))
+    centroids = centroids[keep].reset_index(drop=True)
+
     cells = gpd.GeoDataFrame(
         {"id": ids, "ix": ix, "iy": iy, "near_stop_m": near_stop_m},
         geometry=shapely.box(xmin, ymin, xmin + cell_size_m, ymin + cell_size_m),
@@ -307,10 +314,9 @@ def build_grid(bbox: tuple[float, float, float, float], gtfs: Path,
     cells.to_file(out_path, layer="cells", driver="GPKG")
     centroids.to_crs("EPSG:4326").to_file(out_path, layer="centroids", driver="GPKG")
 
-    print(f"  {len(cells):,} cells of {cell_size_m:g} m in {crs}")
-    for limit in (800, 1000, 2000):
-        n = int((near_stop_m <= limit).sum())
-        print(f"    within {limit:>5,} m of a stop: {n:>7,} ({n / len(cells):.0%})")
+    print(f"  {n_covering:,} cells of {cell_size_m:g} m in {crs} cover the clip box")
+    print(f"  kept {len(cells):,} ({len(cells) / n_covering:.0%}) within "
+          f"{max_distance_to_stop_m:,.0f} m of a stop; dropped {n_covering - len(cells):,}")
     print(f"  wrote {out_path} ({mb(out_path)}) in {time.perf_counter() - started:.1f} s")
 
 
@@ -358,7 +364,7 @@ def main() -> int:
 
     section("STEP 4 - DESTINATION GRID")
     build_grid(bbox, gtfs, float(cfg["grid"]["cell_size_m"]), str(cfg["grid"]["crs"]),
-               Path(cfg["paths"]["grid"]))
+               float(cfg["grid"]["max_distance_to_stop_m"]), Path(cfg["paths"]["grid"]))
     print()
     print("Routing inputs built: clipped extract, R5 network, destination grid.")
     return 0

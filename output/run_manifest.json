@@ -1,0 +1,414 @@
+{
+  "generated_utc": "2026-09-15T15:23:13+00:00",
+  "inputs": {
+    "gtfs": {
+      "path": "data\\raw\\gtfs.zip",
+      "sha256": "289625b154248c981b534ff007e2a788b07fd23944873b0c3a1ef8fac2354d4c"
+    },
+    "osm_clipped": {
+      "path": "data/processed/lincoln.osm.pbf",
+      "sha256": "32e2d46b229039cce1258be2c63435643fd8352d0f1b6e537811ffbf00ab7d24"
+    },
+    "grid": {
+      "path": "data/processed/grid.gpkg",
+      "cell_size_m": 150,
+      "max_distance_to_stop_m": 1000
+    }
+  },
+  "software": {
+    "r5py": "1.1.7",
+    "r5_jar": "r5-v7.5.1-r5py-all.jar",
+    "java": "25.0.2"
+  },
+  "routing": {
+    "speed_walking_kmh": 4.7,
+    "max_walk_minutes": 10,
+    "departure_time_window_minutes": 60,
+    "percentiles": [
+      25,
+      50,
+      75
+    ],
+    "max_time_minutes": 60,
+    "bands_minutes": [
+      15,
+      30,
+      45,
+      60
+    ],
+    "transport_modes": [
+      "TRANSIT",
+      "WALK"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "tue_0800",
+      "label": "Tuesday 8am",
+      "weekday": "Tuesday",
+      "date": "2026-09-15",
+      "time": "08:00",
+      "window_minutes": 60,
+      "active_service_ids": [
+        "1"
+      ],
+      "routed": true
+    },
+    {
+      "id": "tue_2000",
+      "label": "Tuesday 8pm",
+      "weekday": "Tuesday",
+      "date": "2026-09-15",
+      "time": "20:00",
+      "window_minutes": 60,
+      "active_service_ids": [
+        "1"
+      ],
+      "routed": true
+    },
+    {
+      "id": "sat_1700",
+      "label": "Saturday 5pm",
+      "weekday": "Saturday",
+      "date": "2026-09-19",
+      "time": "17:00",
+      "window_minutes": 60,
+      "active_service_ids": [
+        "2"
+      ],
+      "routed": true
+    },
+    {
+      "id": "sun_1200",
+      "label": "Sunday noon",
+      "weekday": "Sunday",
+      "date": "2026-09-20",
+      "time": "12:00",
+      "window_minutes": 60,
+      "active_service_ids": [],
+      "routed": false
+    }
+  ],
+  "origins": [
+    {
+      "slug": "downtown",
+      "name": "Downtown (11th & P)",
+      "stop_id": "246",
+      "stop_name": "P Street & North 11th Street, SW",
+      "lat": 40.814647,
+      "lon": -96.705861,
+      "note": "Best case: most weekday trips of any stop (315), last bus 9:48pm. Also stands in for UNL City Campus, 0.9 km away."
+    },
+    {
+      "slug": "unl-east-campus",
+      "name": "UNL East Campus",
+      "stop_id": "485",
+      "stop_name": "North 35th Street & East Campus Loop South",
+      "lat": 40.829506,
+      "lon": -96.669889,
+      "note": "UNL student: 302 weekday trips but none on Saturday; routes 24 and 25 are weekday-only."
+    },
+    {
+      "slug": "n27th-superior",
+      "name": "N 27th & Superior",
+      "stop_id": "480",
+      "stop_name": "Walmart - 27th & Superior Street",
+      "lat": 40.859071,
+      "lon": -96.678458,
+      "note": "Suburban housing and groceries: 88 apartment buildings and 3 supermarkets within 800 m (OpenStreetMap)."
+    },
+    {
+      "slug": "bryan-east",
+      "name": "Bryan Health East Campus (48th & A)",
+      "stop_id": "786",
+      "stop_name": "South 48th Street & A Street, SE",
+      "lat": 40.798603,
+      "lon": -96.653606,
+      "note": "Shift worker: beside Bryan Health East Campus; last weekday bus 7:46pm."
+    },
+    {
+      "slug": "s40th-briarpark",
+      "name": "S 40th & Briarpark",
+      "stop_id": "733",
+      "stop_name": "South 40th Street & Briarpark Drive, SE",
+      "lat": 40.756729,
+      "lon": -96.663244,
+      "note": "Worst case with service: south edge, route 56 only, 13 weekday trips, last bus 6:26pm."
+    },
+    {
+      "slug": "48th-r-target",
+      "name": "48th & R (Target)",
+      "stop_id": "500",
+      "stop_name": "R Street & North 48th Street Target, N",
+      "lat": 40.817182,
+      "lon": -96.6549,
+      "note": "Groceries: 4 supermarkets within 800 m (OpenStreetMap); route 44, 30 weekday trips."
+    }
+  ],
+  "results": [
+    {
+      "origin": "downtown",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 124,
+      "<=30": 919,
+      "<=45": 3167,
+      "<=60": 4941,
+      "km2": 111.2,
+      "seconds": 4.0
+    },
+    {
+      "origin": "downtown",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 85,
+      "<=30": 282,
+      "<=45": 476,
+      "<=60": 1144,
+      "km2": 25.7,
+      "seconds": 0.9
+    },
+    {
+      "origin": "downtown",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 62,
+      "<=30": 301,
+      "<=45": 825,
+      "<=60": 2397,
+      "km2": 53.9,
+      "seconds": 1.0
+    },
+    {
+      "origin": "downtown",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    },
+    {
+      "origin": "unl-east-campus",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 169,
+      "<=30": 743,
+      "<=45": 1834,
+      "<=60": 3188,
+      "km2": 71.7,
+      "seconds": 1.2
+    },
+    {
+      "origin": "unl-east-campus",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 105,
+      "<=30": 331,
+      "<=45": 439,
+      "<=60": 617,
+      "km2": 13.9,
+      "seconds": 0.9
+    },
+    {
+      "origin": "unl-east-campus",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 58,
+      "<=30": 149,
+      "<=45": 652,
+      "<=60": 1215,
+      "km2": 27.3,
+      "seconds": 0.8
+    },
+    {
+      "origin": "unl-east-campus",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    },
+    {
+      "origin": "n27th-superior",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 46,
+      "<=30": 663,
+      "<=45": 1338,
+      "<=60": 2349,
+      "km2": 52.9,
+      "seconds": 0.9
+    },
+    {
+      "origin": "n27th-superior",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 41,
+      "<=30": 145,
+      "<=45": 546,
+      "<=60": 786,
+      "km2": 17.7,
+      "seconds": 0.8
+    },
+    {
+      "origin": "n27th-superior",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 41,
+      "<=30": 51,
+      "<=45": 438,
+      "<=60": 996,
+      "km2": 22.4,
+      "seconds": 0.8
+    },
+    {
+      "origin": "n27th-superior",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    },
+    {
+      "origin": "bryan-east",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 62,
+      "<=30": 522,
+      "<=45": 1327,
+      "<=60": 2878,
+      "km2": 64.8,
+      "seconds": 1.0
+    },
+    {
+      "origin": "bryan-east",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 62,
+      "<=30": 62,
+      "<=45": 62,
+      "<=60": 62,
+      "km2": 1.4,
+      "seconds": 0.7
+    },
+    {
+      "origin": "bryan-east",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 62,
+      "<=30": 135,
+      "<=45": 659,
+      "<=60": 1196,
+      "km2": 26.9,
+      "seconds": 0.8
+    },
+    {
+      "origin": "bryan-east",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    },
+    {
+      "origin": "s40th-briarpark",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 58,
+      "<=30": 59,
+      "<=45": 224,
+      "<=60": 489,
+      "km2": 11.0,
+      "seconds": 0.8
+    },
+    {
+      "origin": "s40th-briarpark",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 58,
+      "<=30": 59,
+      "<=45": 59,
+      "<=60": 59,
+      "km2": 1.3,
+      "seconds": 0.7
+    },
+    {
+      "origin": "s40th-briarpark",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 58,
+      "<=30": 59,
+      "<=45": 224,
+      "<=60": 489,
+      "km2": 11.0,
+      "seconds": 0.8
+    },
+    {
+      "origin": "s40th-briarpark",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    },
+    {
+      "origin": "48th-r-target",
+      "scenario": "tue_0800",
+      "routed": true,
+      "<=15": 57,
+      "<=30": 324,
+      "<=45": 1012,
+      "<=60": 2547,
+      "km2": 57.3,
+      "seconds": 0.9
+    },
+    {
+      "origin": "48th-r-target",
+      "scenario": "tue_2000",
+      "routed": true,
+      "<=15": 57,
+      "<=30": 74,
+      "<=45": 315,
+      "<=60": 622,
+      "km2": 14.0,
+      "seconds": 0.8
+    },
+    {
+      "origin": "48th-r-target",
+      "scenario": "sat_1700",
+      "routed": true,
+      "<=15": 57,
+      "<=30": 107,
+      "<=45": 420,
+      "<=60": 970,
+      "km2": 21.8,
+      "seconds": 0.8
+    },
+    {
+      "origin": "48th-r-target",
+      "scenario": "sun_1200",
+      "routed": false,
+      "<=15": 0,
+      "<=30": 0,
+      "<=45": 0,
+      "<=60": 0,
+      "km2": 0.0,
+      "seconds": 0.0
+    }
+  ]
+}

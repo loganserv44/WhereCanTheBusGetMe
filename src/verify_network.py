@@ -49,12 +49,15 @@ TRIPS = [
     ("Downtown -> N 33rd & Holdrege (East Campus)", "140", "transit"),
 ]
 
-# Methodology values. r5py's defaults differ and must be overridden on every call:
-# walking speed defaults to 3.6 km/h (methodology: 4.8), and the departure time window
-# defaults to 10 minutes (methodology: 60).
-SPEED_WALKING_KMH = 4.8
-MAX_WALK = dt.timedelta(minutes=10)  # ~800 m at 4.8 km/h
-WALK_LIMIT_M = 800
+# Routing values come from config.yml -- the same ones Task 3 uses -- so the network is
+# verified with production settings. r5py's defaults differ (3.6 km/h walking, a
+# 10-minute departure window), so both are always passed explicitly.
+_ROUTING = load_config()["routing"]
+SPEED_WALKING_KMH = float(_ROUTING["speed_walking_kmh"])
+MAX_WALK = dt.timedelta(minutes=float(_ROUTING["max_walk_minutes"]))
+WINDOW = dt.timedelta(minutes=int(_ROUTING["departure_time_window_minutes"]))
+MAX_TIME = dt.timedelta(minutes=int(_ROUTING["max_time_minutes"]))
+WALK_LIMIT_M = round(SPEED_WALKING_KMH / 3.6 * MAX_WALK.total_seconds())  # ~783 m
 
 WALK_MODES = {"WALK"}
 
@@ -176,12 +179,12 @@ def check_grid_matrix(network, r5py, stops, grid_path: Path) -> bool:
         origins=origin,
         destinations=centroids[["id", "geometry"]],
         departure=DEPARTURE,
-        departure_time_window=dt.timedelta(minutes=60),
+        departure_time_window=WINDOW,
         percentiles=[50],
         transport_modes=[r5py.TransportMode.TRANSIT, r5py.TransportMode.WALK],
         speed_walking=SPEED_WALKING_KMH,
         max_time_walking=MAX_WALK,
-        max_time=dt.timedelta(minutes=60),
+        max_time=MAX_TIME,
     )
     elapsed = time.perf_counter() - started
 
