@@ -52,13 +52,16 @@ the open question below.
   contact sheet stays as an internal checking tool. GeoJSON is exported as a reusable
   intermediate but there is no web map in v1. (Changed 2026-09-15 from a 1×4 row, after
   reviewing the Task 3 preview.)
-- **Units**: US customary wherever a reader or editor sees them (miles, square miles,
-  feet, mph), including `config.yml`. The code converts to metric internally where
-  libraries require it (UTM meters, r5py's km/h). Decided 2026-09-15; see "Before Task 5".
+- **Units**: US customary everywhere a *reader* sees them: square miles, miles, feet
+  and mph on maps, captions, tables and the published methodology. The computation stays
+  metric (`config.yml`, the scripts, UTM meters, r5py's km/h), and one shared helper
+  converts at display time. Decided 2026-09-15. Revised 2026-09-16: the earlier version
+  also converted the config and code, which meant rewriting settings across four
+  scripts and recomputing Tasks 2–3 for no difference a reader would see.
 - **Origins**: the pipeline takes an arbitrary origin list. Candidates are proposed with
   rationale from the GTFS + city data (see Task 4), and the final six were approved before
   the expensive full run.
-- **Overlays**: none. Bare isochrone bands + origin marker + a custom basemap drawn from OSM (see Task 5). "Can you
+- **Overlays**: none. Bare isochrone bands + origin marker + a label-free tile basemap with our own landmark labels (see Task 5). "Can you
   reach the grocery store" is answered by choosing origins near those trips, not by
   drawing pins.
 - **Sunday panel**: truly blank — origin marker and a "No StarTran service" caption, no
@@ -189,22 +192,23 @@ grocery cluster; one low-frequency edge-of-network stop (worst case). **Done: si
 Briarpark, 48th & R), with rationale in `data/origins.csv`. User picks 3–5
 before the full compute run. `origins.csv` columns: `slug,name,lat,lon,note`.
 
-**Before Task 5 — switch to US units.** *Pending; agreed 2026-09-15.* Convert the
-`config.yml` settings and everything reader-facing to US units, rerun Tasks 2–3 (about
-20 s), and update the docs in the same change:
+**Units at display time (part of Task 5).** *Revised 2026-09-16.* The computation stays
+metric, and nothing is recomputed. A small `src/units.py` holds the conversions (km² → sq
+mi, km/h → mph, m → ft or mi), and every number a reader sees goes through it, so there
+is one place a conversion could be wrong. What readers see:
 
-| Setting | Now | Becomes |
-| --- | --- | --- |
-| Walking speed | 4.7 km/h | 2.9 mph |
-| Walk limit | 10 min (~780 m) | 10 min (about half a mile) |
-| Grid square | 150 m | 500 ft (152.4 m) |
-| Grid trim | 1 km from a stop | 0.6 mi (still lossless; farthest reachable cell is ~0.48 mi) |
-| Clip buffer | 5 km | 3 mi |
-| Reported area | km² | sq mi |
+| Computed (metric) | Shown to readers |
+| --- | --- |
+| Walking speed 4.7 km/h | 2.9 mph |
+| Walk limit 10 min (~780 m) | 10 minutes, about half a mile |
+| Grid square 150 m | about 490 ft |
+| Grid trim 1 km from a stop | 0.62 mi |
+| Clip buffer 5 km | 3.1 mi |
+| Reach, e.g. downtown Tue 8am 111 km² | 43 sq mi |
 
-Until the conversion runs, `methodology.md`, `README.md`, the preview and this plan still
-show metric. Keep metric in parentheses only when quoting a source (e.g. the 1.31 m/s
-meta-analysis figure).
+`methodology.md` and `README.md` switch to US units in the same change as the final
+figures. Metric stays in parentheses only when quoting a source (e.g. the 1.31 m/s
+walking-speed study). `config.yml` and the scripts stay metric.
 
 **Task 5 — Render the final figures (`src/render_panels.py`).** *Not started.* The design
 was agreed 2026-09-15 after reviewing the Task 3 preview, which was hard to read: nothing
@@ -213,11 +217,15 @@ the copy, and the key facts (like a last bus at 7:46pm) never stated on the map.
 
 - **Layout:** one figure per origin, a 2×2 grid (Tue 8am, Tue 8pm / Sat 5pm, Sun noon),
   the same extent in all four panels, sized to read on a phone.
-- **Basemap:** drawn from our OSM extract rather than map tiles: highways and main
-  streets, water and parks, the city limits, and about 8 labeled landmarks (Downtown,
-  UNL City & East Campus, Airport, Gateway, SouthPointe…). Muted so the bands stay
-  dominant. No tile service or attribution line needed.
-- **Band shapes:** smoothed, contour-like shapes instead of 500-ft staircases, with no
+- **Basemap:** *revised 2026-09-16.* Label-free map tiles (CartoDB Positron "no labels"
+  via `contextily`, cached in `data/processed/tiles/`) supply streets, water and parks
+  with no filtering work. On top go about 8 landmark labels we place ourselves (Downtown,
+  UNL City & East Campus, Airport, Gateway, SouthPointe…), listed with coordinates in
+  `config.yml`, plus the city-limits outline from our OSM extract. The tiles' own labels
+  were what turned to mush at panel size; this style has none. Requires the credit line
+  "© OpenStreetMap contributors © CARTO". (Replaces a fully custom basemap, which would
+  have meant filtering 921 ponds and 484 parks.)
+- **Band shapes:** smoothed, contour-like shapes instead of blocky 150 m (≈490 ft) staircases, with no
   white seams between bands. Keep a raw-cell "honest pixels" mode in `config.yml` for
   checking, and note the few hundred feet of edge precision lost in the methodology.
 - **Color:** the one-hue blue ordinal ramp validated for the preview (darkest = reached
@@ -226,8 +234,21 @@ the copy, and the key facts (like a last bus at 7:46pm) never stated on the map.
   Tuesday 8am (e.g. "10 sq mi · down 77%"), so the collapse reads without math.
 - **Copy:** a plain-language title and subtitle; method details move to a small footer
   and the methodology. Readable dates ("Tue, Sept 15"). Bigger text.
-- **Callouts:** short notes on the map for the key facts, e.g. "Last bus left 7:46pm"
-  (Bryan East, Tue 8pm) and "No buses run on Sundays".
+- **Callouts:** *hand-written, 2026-09-16.* Short notes stating the key fact on a panel,
+  written by hand in `config.yml` rather than derived by code. At most one per panel,
+  one short line (about 30 characters), always drawn in the same spot on the panel.
+  Sunday panels get "No buses run on Sundays" automatically, because Task 3 already marks
+  those scenarios as having no service. Format, keyed by origin slug
+  (`data/origins.csv`) and scenario id (`config.yml`):
+
+  ```yaml
+  callouts:
+    bryan-east:
+      tue_2000: "Last bus left 7:46pm"
+  ```
+
+  Every time or count in a callout must come from the feed, not memory. The render
+  script should refuse a callout whose origin slug or scenario id doesn't exist.
 - **Origin:** a larger, labeled marker. Bus routes are faint context only.
 
 Export two versions of each figure:
@@ -236,30 +257,30 @@ Export two versions of each figure:
   compresses poorly, so a 200 dpi four-panel PNG can run 2–3 MB; the WebP should land
   around 300–600 KB, which keeps the whole page near 2–3 MB on a phone.
 
-The contact sheet (`src/preview_isochrones.py`) stays as the checking view. Load the
-`dataviz` skill before any color or layout change.
+`render_panels.py` is built from `src/preview_isochrones.py`, which already handles
+loading, routes, the shared extent, the legend and labels, rather than from scratch.
+Pieces both scripts need move into shared functions, and the contact sheet stays as the
+checking view. Load the `dataviz` skill before any color or layout change.
 
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
 
-**Task 7 — Publish to GitHub Pages (`src/publish.py`).**
-The finished panels are published to the existing personal site repo
-(`loganserv44/loganserv44.github.io`) as a self-contained subfolder, matching the pattern
-already used by `mail-in-ballot-search/` and `profsearch/`. `publish.py` takes the site
-repo path (config or `--site-repo`) and:
-- copies `output/web/*.webp` → `where-the-bus-goes/panels/` (the web-sized images, not
-  the 200 dpi archive PNGs)
-- does **not** copy the GeoJSON. The v1 page doesn't use it, and anything committed to
-  the site repo stays in its git history for good. Ship it when an interactive version
-  actually needs it.
+**Task 7 — Publish to GitHub Pages.** *Simplified 2026-09-16.* The finished figures go
+into the existing personal site repo (`loganserv44/loganserv44.github.io`) as a
+self-contained subfolder, matching `mail-in-ballot-search/` and `profsearch/`.
 
-Publish to the site repo when the maps are final, not after every tweak: each
-republished image set stays in the site's history permanently.
-- renders `where-the-bus-goes/index.html` from a template, injecting the feed version,
-  download date, scenario dates, and the methodology summary so the page cannot drift
-  from what actually ran
-- stages nothing and commits nothing — it prints what changed and leaves both repos for
-  manual review and commit
+- `where-the-bus-goes/index.html` is **written by hand, once**: title, the six figures,
+  a short plain-language explanation, the map credit line, and a link to the methodology
+  in this repo. No template system. The few facts it states (feed version, dates,
+  walking speed) get updated by hand if the analysis is ever rerun.
+- A short `src/publish.py` copies `output/web/*.webp` into `where-the-bus-goes/panels/`
+  and prints what changed. It stages and commits nothing; both repos are reviewed and
+  committed by hand.
+- The GeoJSON is **not** copied. The page doesn't use it, and anything committed to the
+  site repo stays in its history for good.
+
+Publish when the maps are final, not after every tweak, since each republished image set
+stays in the site's history permanently.
 
 Final URL: `https://loganserv44.github.io/where-the-bus-goes/`
 
@@ -269,7 +290,7 @@ Final URL: `https://loganserv44.github.io/where-the-bus-goes/`
 config.yml                 # scenarios, bands, grid size, walk limit/speed, bbox
 data/
   raw/          gtfs.zip, nebraska-latest.osm.pbf, MANIFEST.json   (gitignored)
-  processed/    lincoln.osm.pbf (+ .json sidecar), grid.gpkg, basemap layers  (gitignored)
+  processed/    lincoln.osm.pbf (+ .json sidecar), grid.gpkg, tiles/ (basemap tile cache)  (gitignored)
                 # R5's built network is cached by r5py in %LOCALAPPDATA%\r5py, not here
   origins.csv
 src/
@@ -279,13 +300,10 @@ src/
   verify_network.py        # Task 2: check the network against known trips
   compute_isochrones.py
   preview_isochrones.py    # contact sheet of every result, for checking
+  units.py                 # Task 5: metric -> US conversions for everything readers see
   render_panels.py         # Task 5: final per-origin figures (not started)
-  publish.py               # copy panels + render index.html into the Pages site repo
+  publish.py               # Task 7: copy the web images into the Pages site repo
   common.py                # config load, slugify, paths, scenario-date derivation
-  templates/
-    page.html.j2           # the published project page
-notebooks/
-  premise_check.ipynb
 output/
   grids/*.parquet
   isochrones/*.geojson
@@ -303,10 +321,12 @@ Makefile) chaining fetch → build → compute → render.
 
 ### Verification
 
-1. **Premise gate**: `notebooks/premise_check.ipynb` prints service spans per day type,
-   asserts no Sunday service, cross-checked against one published StarTran PDF schedule.
-2. **Network sanity**: one r5py trip (downtown hub → UNL, Tue 8am) returns a plausible
-   ~10–20 min transit itinerary.
+1. **Premise gate** (done): `src/premise_check.py` prints service spans per day type and
+   fails if any Sunday service exists. Not yet cross-checked against a published
+   StarTran PDF schedule.
+2. **Network sanity** (done): `src/verify_network.py` checks trips with known answers
+   (walking wins downtown → City Campus; the bus wins downtown → East Campus) and a
+   one-origin run over the whole grid.
 3. **Grid spot-checks**: for one origin/scenario, hand-verify 3–4 cells against Google
    Maps transit directions for the same date/time (rough agreement expected).
 4. **Scenario contrast**: Tue 8pm reachable area visibly smaller than Tue 8am; Sat 5pm
@@ -345,6 +365,8 @@ get them home.
 - A more meaningful panel headline, such as the share of Lincoln residents or jobs
   reachable, would need census data (a new source). Deferred on 2026-09-15 in favor of
   sq mi plus change from Tuesday 8am.
+- Before publishing: confirm CARTO's basemap terms allow static map images on a personal
+  site with the credit line (not yet checked).
 - License for the repo (MIT for the code vs. CC BY for the maps, or both).
 - Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
   start linking out to the project pages. Out of scope here, but this project makes it
