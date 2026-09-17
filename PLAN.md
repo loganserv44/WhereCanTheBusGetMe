@@ -290,13 +290,13 @@ checking view. Load the `dataviz` skill before any color or layout change.
 **Hourly explorer DONE (2026-09-17).** A companion to the four headline figures: one map
 per hour so a reader watches service build and fall away instead of inferring it from
 four snapshots.
-- `config.yml` → `explorer:` lists the origins (downtown, Bryan East, Briarpark) and day
-  ranges (weekday 6am–9pm, Saturday 7am–7pm). `compute_isochrones.py` expands those into
-  one scenario per hour and validates each date like any other. **90 extra grids**, about
-  90 seconds of routing.
+- `config.yml` → `explorer:` lists the origins (downtown, Bryan East, Briarpark, N 27th &
+  Superior) and day ranges (weekday 6am–9pm, Saturday 7am–7pm, Sunday once).
+  `compute_isochrones.py` expands those into one scenario per hour and validates each
+  date like any other. **120 extra grids**, about two minutes of routing.
 - `render_panels.py` renders each hour as a single-panel image (no burned-in headline —
   the page supplies the number as text) sharing that origin's figure extent, so nothing
-  jumps when you change hour. 90 images, 4.8 MB including the page.
+  jumps when you change hour. 120 images, 6.6 MB including the page.
 - `output/web/explorer/index.html` is the page: origin and day buttons, and an hour
   timeline whose bars are the area reachable that hour, so the shape of the day is
   visible before you click anything. It reads `data.js` (a script assignment rather than
