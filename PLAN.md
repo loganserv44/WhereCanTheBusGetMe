@@ -1,6 +1,25 @@
 # Where the Bus Goes (Working Title)
 ## Isochrone maps of StarTran transit access in Lincoln, NE
 
+### Where to pick up (updated 2026-09-17)
+
+**Done:** Tasks 0–5. The premise is verified, the network built and checked, six origins
+chosen, travel times computed, six 2×2 figures rendered, and an hourly explorer built for
+four origins.
+
+**Next: Task 7 — publish.** Hand-write `where-the-bus-goes/index.html` in the
+`loganserv44.github.io` repo and copy the images across with a short `src/publish.py`.
+`output/web/explorer/index.html` is a working page to build on.
+
+**Open questions, none blocking:** whether to switch the map colour ramp from blue to
+orange (compared in `output/preview/ramp_options.png`); the repo licence; and two
+unverified patterns in the hourly data noted at the end of `methodology.md`.
+
+**To rerun anything:** `README.md` lists the pipeline in order. The environment is
+`micromamba run -n wherecanthebusgetme python <script>`. Every parameter that changes a
+result is in `config.yml`; what actually produced the current output is in
+`output/run_manifest.json`.
+
 ### Goal
 
 Static isochrone maps showing how far you can travel from a given point in Lincoln using
@@ -409,8 +428,10 @@ get them home.
 - A more meaningful panel headline, such as the share of Lincoln residents or jobs
   reachable, would need census data (a new source). Deferred on 2026-09-15 in favor of
   sq mi plus change from Tuesday 8am.
-- Before publishing: confirm CARTO's basemap terms allow static map images on a personal
-  site with the credit line (not yet checked).
+- ~~Confirm CARTO's basemap terms~~ **Moot 2026-09-17:** CARTO tiles were dropped (they
+  now need an API key). The basemap is drawn from the OpenStreetMap extract, so the only
+  requirement is the "Map data © OpenStreetMap contributors" credit, which every figure
+  and the explorer page already carry.
 - License for the repo (MIT for the code vs. CC BY for the maps, or both).
 - Whether the site's root `index.html` — currently a "Coming Soon" placeholder — should
   start linking out to the project pages. Out of scope here, but this project makes it
