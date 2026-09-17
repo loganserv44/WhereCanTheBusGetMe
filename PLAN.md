@@ -247,8 +247,9 @@ the copy, and the key facts (like a last bus at 7:46pm) never stated on the map.
       tue_2000: "Last bus left 7:46pm"
   ```
 
-  Every time or count in a callout must come from the feed, not memory. The render
-  script should refuse a callout whose origin slug or scenario id doesn't exist.
+  Every time or count in a callout must come from the feed, not memory. Look them up
+  with `python src/stop_schedule.py` (or `--origin <slug>`). The render script should
+  refuse a callout whose origin slug or scenario id doesn't exist.
 - **Origin:** a larger, labeled marker. Bus routes are faint context only.
 
 Export two versions of each figure:
@@ -301,6 +302,7 @@ src/
   compute_isochrones.py
   preview_isochrones.py    # contact sheet of every result, for checking
   units.py                 # Task 5: metric -> US conversions for everything readers see
+  stop_schedule.py         # bus times at each origin stop, for writing callouts
   render_panels.py         # Task 5: final per-origin figures (not started)
   publish.py               # Task 7: copy the web images into the Pages site repo
   common.py                # config load, slugify, paths, scenario-date derivation

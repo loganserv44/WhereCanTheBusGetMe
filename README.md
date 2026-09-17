@@ -70,6 +70,7 @@ python src/build_network.py       # clip OSM, build R5 network, generate destina
 python src/verify_network.py      # check the network against trips with known answers
 python src/compute_isochrones.py  # travel-time grids per origin x scenario
 python src/preview_isochrones.py  # quick-look contact sheet of every result
+python src/stop_schedule.py       # bus times at each origin stop, for writing callouts
 python src/render_panels.py       # the comparison figures
 python src/publish.py             # copy panels + page into the Pages site repo
 ```
