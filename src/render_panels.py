@@ -29,6 +29,8 @@ Run inside the environment, after compute_isochrones.py:
 from __future__ import annotations
 
 import argparse
+import datetime as dt
+import io
 import json
 import sys
 import warnings
@@ -57,6 +59,7 @@ CRS = "EPSG:32614"
 MANIFEST = Path("output/run_manifest.json")
 GRIDS = Path("output/grids")
 PANELS, WEB = Path("output/panels"), Path("output/web")
+EXPLORER = WEB / "explorer"
 BASEMAP = Path("data/processed/basemap.gpkg")
 BASEMAP_LAYERS = ("parks", "water", "roads_minor", "roads_major", "city_limits")
 UNREACHABLE_MINUTES = 90.0  # above the last band, so contours close cleanly
@@ -213,6 +216,33 @@ def draw_landmarks(ax, landmarks: gpd.GeoDataFrame, origin_point) -> None:
                 color=INK2, fontsize=7.8, zorder=6, path_effects=halo(2.2))
 
 
+def draw_panel(ax, *, extent, basemap: dict, routes, landmarks, origin_pt, origin_name: str,
+               grid_x, grid_y, surface=None, reach=None, sigma: float = 1.0,
+               routed: bool = True) -> None:
+    """One map panel: basemap, bus routes, travel-time bands, landmarks, origin, scale bar.
+
+    Shared by the 2×2 figures and the hourly explorer's single-panel images, so the two
+    can never drift apart.
+    """
+    minx, miny, maxx, maxy = extent
+    ax.set_xlim(minx, maxx)
+    ax.set_ylim(miny, maxy)
+    ax.set_aspect("equal")
+    ax.set_facecolor(SURFACE)
+    draw_basemap(ax, basemap)
+    routes.plot(ax=ax, color=MUTED, linewidth=0.45, alpha=0.45, zorder=2)
+    if routed and surface is not None:
+        draw_bands(ax, surface, reach, grid_x, grid_y, sigma)
+    draw_landmarks(ax, landmarks, origin_pt)
+    draw_origin(ax, origin_pt, origin_name)
+    scale_bar(ax, maxx - minx)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_color(HAIRLINE)
+        spine.set_linewidth(0.9)
+
+
 def draw_origin(ax, point, label: str) -> None:
     ax.scatter([point.x], [point.y], s=95, marker="o", c=INK, edgecolors=SURFACE,
                linewidths=2.0, zorder=8)
@@ -224,7 +254,8 @@ def draw_origin(ax, point, label: str) -> None:
 # --------------------------------------------------------------------------
 def render_origin(origin: dict, scenarios: list[dict], results: dict, cfg: dict,
                   cells: gpd.GeoDataFrame, routes: gpd.GeoSeries, landmarks: gpd.GeoDataFrame,
-                  basemap: dict, city_sq_mi: float, feed_version: str) -> Path:
+                  basemap: dict, city_sq_mi: float, feed_version: str,
+                  extent_scenario_ids: list[str] | None = None) -> tuple:
     render = cfg["render"]
     routing = cfg["routing"]
     cell_size_m = float(cfg["grid"]["cell_size_m"])
@@ -237,6 +268,17 @@ def render_origin(origin: dict, scenarios: list[dict], results: dict, cfg: dict,
         surface, reach = travel_time_surface(stem, cells, (ny, nx), ix0, iy0)
         surfaces[s["id"]], reaches[s["id"]] = surface, reach
         rows, cols = np.where(~np.isnan(surface))
+        if len(rows):
+            reach_bounds.append((x[cols.min()], y[rows.min()], x[cols.max()], y[rows.max()]))
+
+    # The hourly explorer shares this figure's extent, so its scenarios have to be
+    # included when fitting it -- otherwise a busier hour would spill outside the frame.
+    for extra_id in extent_scenario_ids or []:
+        if extra_id in surfaces:
+            continue
+        extra, _ = travel_time_surface(f"{origin['slug']}__{extra_id}", cells,
+                                       (ny, nx), ix0, iy0)
+        rows, cols = np.where(~np.isnan(extra))
         if len(rows):
             reach_bounds.append((x[cols.min()], y[rows.min()], x[cols.max()], y[rows.max()]))
 
@@ -270,24 +312,11 @@ def render_origin(origin: dict, scenarios: list[dict], results: dict, cfg: dict,
     baseline_km2 = results[(origin["slug"], scenarios[0]["id"])]["km2"]
     for idx, s in enumerate(scenarios):
         ax = axes[idx // 2][idx % 2]
-        ax.set_xlim(minx, maxx)
-        ax.set_ylim(miny, maxy)
-        ax.set_aspect("equal")
-        ax.set_facecolor(SURFACE)
-        draw_basemap(ax, basemap)
-        routes.plot(ax=ax, color=MUTED, linewidth=0.45, alpha=0.45, zorder=2)
-
         result = results[(origin["slug"], s["id"])]
-        if result["routed"]:
-            draw_bands(ax, surfaces[s["id"]], reaches[s["id"]], x, y,
-                       float(render["smoothing_sigma_cells"]))
-        draw_landmarks(ax, landmarks, origin_pt)
-        draw_origin(ax, origin_pt, origin["name"])
-        scale_bar(ax, maxx - minx)
-
-        ax.set_xticks([]); ax.set_yticks([])
-        for spine in ax.spines.values():
-            spine.set_color(HAIRLINE); spine.set_linewidth(0.9)
+        draw_panel(ax, extent=(minx, miny, maxx, maxy), basemap=basemap, routes=routes,
+                   landmarks=landmarks, origin_pt=origin_pt, origin_name=origin["name"],
+                   grid_x=x, grid_y=y, surface=surfaces[s["id"]], reach=reaches[s["id"]],
+                   sigma=float(render["smoothing_sigma_cells"]), routed=result["routed"])
 
         when = pd.Timestamp(s["date"]).strftime("%a, %b %d").replace(" 0", " ")
         ax.set_title(f"{s['label']}", color=INK, fontsize=13, fontweight="bold",
@@ -364,7 +393,64 @@ def render_origin(origin: dict, scenarios: list[dict], results: dict, cfg: dict,
     webp = WEB / f"{origin['slug']}.webp"
     print(f"    {png} ({png.stat().st_size / 1e6:.1f} MB), "
           f"{webp} ({webp.stat().st_size / 1e6:.2f} MB)")
-    return png
+    return png, (minx, miny, maxx, maxy), (x, y), (ix0, iy0), (ny, nx)
+
+
+# --------------------------------------------------------------------------
+# hourly explorer: one single-panel image per hour
+# --------------------------------------------------------------------------
+def render_explorer(origin: dict, scenarios: list[dict], results: dict, cfg: dict,
+                    cells: gpd.GeoDataFrame, routes, landmarks, basemap: dict,
+                    extent: tuple, grid_xy: tuple, offsets: tuple,
+                    shape: tuple) -> list[dict]:
+    """Render one image per hour for this origin, and return the page's metadata.
+
+    No headline or date is drawn into these: the page supplies both as real text, so it
+    is selectable and reachable by a screen reader.
+    """
+    render = cfg["render"]
+    x, y = grid_xy
+    ix0, iy0 = offsets
+    width_px = int(render.get("explorer_width_px", 1200))
+    EXPLORER.mkdir(parents=True, exist_ok=True)
+
+    entries = []
+    for s in scenarios:
+        stem = f"{origin['slug']}__{s['id']}"
+        result = results[(origin["slug"], s["id"])]
+        surface, reach = travel_time_surface(stem, cells, shape, ix0, iy0)
+
+        inches = width_px / 200
+        fig, ax = plt.subplots(figsize=(inches, inches), facecolor=SURFACE)
+        fig.subplots_adjust(left=0.004, right=0.996, top=0.996, bottom=0.004)
+        draw_panel(ax, extent=extent, basemap=basemap, routes=routes, landmarks=landmarks,
+                   origin_pt=gpd.GeoSeries(gpd.points_from_xy([origin["lon"]], [origin["lat"]]),
+                                           crs="EPSG:4326").to_crs(CRS).iloc[0],
+                   origin_name=origin["name"], grid_x=x, grid_y=y, surface=surface,
+                   reach=reach, sigma=float(render["smoothing_sigma_cells"]),
+                   routed=result["routed"])
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", dpi=200, facecolor=SURFACE)
+        plt.close(fig)
+        buf.seek(0)
+        with Image.open(buf) as im:
+            im.convert("RGB").save(EXPLORER / f"{stem}.webp", quality=80, method=6)
+
+        entries.append({
+            "origin": origin["slug"],
+            "scenario": s["id"],
+            "day": s.get("day_id"),
+            "day_label": s.get("day_label"),
+            "hour": s.get("hour"),
+            "label": s["label"],
+            "image": f"{stem}.webp",
+            "area": fmt_sq_mi(result["km2"]) if result["routed"] else None,
+            "km2": result["km2"],
+            "routed": bool(result["routed"]),
+        })
+    total = sum((EXPLORER / e["image"]).stat().st_size for e in entries) / 1e6
+    print(f"    {len(entries)} hourly images in {EXPLORER} ({total:.1f} MB)")
+    return entries
 
 
 def main() -> int:
@@ -373,11 +459,17 @@ def main() -> int:
     ap.add_argument("--origin", help="render only this origin slug")
     ap.add_argument("--rebuild-basemap", action="store_true",
                     help="re-extract the basemap layers from the OSM clip")
+    ap.add_argument("--skip-explorer", action="store_true",
+                    help="render only the 2x2 figures, not the hourly explorer images")
     args = ap.parse_args()
 
     cfg = load_config()
     man = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    scenarios, origins = man["scenarios"], man["origins"]
+    origins = man["origins"]
+    scenarios = [s for s in man["scenarios"] if not s.get("explorer")]
+    explorer_scenarios = [s for s in man["scenarios"] if s.get("explorer")]
+    explorer_cfg = man.get("explorer") or {}
+    explorer_origins = set(explorer_cfg.get("origins") or [])
     results = {(r["origin"], r["scenario"]): r for r in man["results"]}
     if args.origin:
         origins = [o for o in origins if o["slug"] == args.origin]
@@ -409,10 +501,39 @@ def main() -> int:
 
     print(f"Rendering {len(origins)} figure(s), smoothing sigma "
           f"{cfg['render']['smoothing_sigma_cells']} cells")
+    entries = []
     for o in origins:
         print(f"  {o['name']}")
-        render_origin(o, scenarios, results, cfg, cells, routes, landmarks,
-                      basemap, city_sq_mi, feed_version)
+        hourly_ids = ([s["id"] for s in explorer_scenarios]
+                      if o["slug"] in explorer_origins else [])
+        _png, extent, grid_xy, offsets, shape = render_origin(
+            o, scenarios, results, cfg, cells, routes, landmarks, basemap, city_sq_mi,
+            feed_version, extent_scenario_ids=hourly_ids)
+        if hourly_ids and not args.skip_explorer:
+            entries += render_explorer(o, explorer_scenarios, results, cfg, cells, routes,
+                                       landmarks, basemap, extent, grid_xy, offsets, shape)
+
+    if entries:
+        routing = cfg["routing"]
+        payload = {
+            "generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+            "feed_version": feed_version,
+            "walking_mph": round(float(routing["speed_walking_kmh"]) * 0.6213711922, 1),
+            "max_walk_minutes": routing["max_walk_minutes"],
+            "window_minutes": routing["departure_time_window_minutes"],
+            "days": explorer_cfg.get("days"),
+            "origins": [{"slug": o["slug"], "name": o["name"]} for o in man["origins"]
+                        if o["slug"] in explorer_origins],
+            "bands": [{"minutes": b, "color": c, "label": lab} for b, c, lab in BANDS],
+            "panels": entries,
+        }
+        (EXPLORER / "data.json").write_text(json.dumps(payload, indent=1) + "\n",
+                                            encoding="utf-8")
+        # Also as a script assignment: fetch() is blocked on file:// URLs, so this lets
+        # the page work when opened straight from disk as well as when served.
+        (EXPLORER / "data.js").write_text(
+            "window.EXPLORER_DATA = " + json.dumps(payload) + ";\n", encoding="utf-8")
+        print(f"  wrote {EXPLORER / 'data.json'} and data.js ({len(entries)} panels)")
     return 0
 
 

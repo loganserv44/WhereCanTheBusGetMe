@@ -12,8 +12,9 @@ StarTran runs no Sunday service, so the fourth panel is blank.
 > **Status: maps done, not yet published.** Tasks 0–5 are complete: the premise is
 > verified, the network is built and checked, six origins chosen, travel times computed,
 > and the six final figures rendered to `output/panels/` (print) and `output/web/` (web).
-> What's left is a units pass over this file and publishing the page. See
-> [PLAN.md](PLAN.md) for the task breakdown.
+> There is also an hourly explorer — `output/web/explorer/index.html`, openable straight
+> from disk — with one map per hour for three origins. What's left is the site page and
+> publishing. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 
@@ -73,7 +74,8 @@ python src/verify_network.py      # check the network against trips with known a
 python src/compute_isochrones.py  # travel-time grids per origin x scenario
 python src/preview_isochrones.py  # quick-look contact sheet of every result
 python src/stop_schedule.py       # bus times at each origin stop, for writing callouts
-python src/render_panels.py       # the comparison figures
+python src/render_panels.py       # the comparison figures + hourly explorer images
+                                  #   (--skip-explorer for just the figures)
 python src/publish.py             # copy panels + page into the Pages site repo
 ```
 

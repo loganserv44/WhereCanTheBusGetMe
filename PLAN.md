@@ -285,8 +285,24 @@ checking view. Load the `dataviz` skill before any color or layout change.
   attempt (1.97:1 light end), which was re-stepped to 2.05:1. **Open:** whether to
   switch the maps from blue to orange, which avoids competing with the basemap's blue
   water and green parks.
-- Still to do in Task 6/7: fold the units pass through `README.md`, write the page, and
-  publish.
+- Units pass through `methodology.md` and `README.md` done 2026-09-17.
+
+**Hourly explorer DONE (2026-09-17).** A companion to the four headline figures: one map
+per hour so a reader watches service build and fall away instead of inferring it from
+four snapshots.
+- `config.yml` → `explorer:` lists the origins (downtown, Bryan East, Briarpark) and day
+  ranges (weekday 6am–9pm, Saturday 7am–7pm). `compute_isochrones.py` expands those into
+  one scenario per hour and validates each date like any other. **87 extra grids**, about
+  90 seconds of routing.
+- `render_panels.py` renders each hour as a single-panel image (no burned-in headline —
+  the page supplies the number as text) sharing that origin's figure extent, so nothing
+  jumps when you change hour. 87 images, 4.7 MB including the page.
+- `output/web/explorer/index.html` is the page: origin and day buttons, and an hour
+  timeline whose bars are the area reachable that hour, so the shape of the day is
+  visible before you click anything. It reads `data.js` (a script assignment rather than
+  `fetch`, so it also works opened straight from disk).
+- Sunday is omitted: no service, nothing to show hour by hour.
+- Still to do: the site page itself and publishing (Task 7).
 
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
@@ -401,6 +417,9 @@ get them home.
 
 ### Out of scope for v1
 
-- Interactive web map (MapLibre + the exported GeoJSON) — additive later.
+- A pan-and-zoom map (MapLibre + the exported GeoJSON) — still out of scope. The hourly
+  explorer gives interactivity without it: pre-rendered images swapped by buttons, so
+  there is no map library, no tile key, and the extent stays fixed (a change you see is
+  a change in service, not in the view).
 - POI / destination overlays.
 - Real-time / observed performance (a GTFS-RT feed exists).

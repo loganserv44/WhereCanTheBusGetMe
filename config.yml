@@ -96,6 +96,23 @@ scenarios:
     date: "2026-09-20"
     time: "12:00"
 
+# The hourly explorer: one map per hour so a reader can watch service build up and fall
+# away, instead of inferring it from four snapshots. Only a few origins, because every
+# hour x origin is another image committed to the site's history for good.
+#
+# Hours are departure times; each still uses the 60-minute window above. Note that the
+# last windows of the day run past the end of service (weekday service ends 9:50pm), so
+# their medians include minutes with no bus at all. For an hourly explorer that is the
+# honest answer -- it is what a rider leaving at a random minute in that hour gets --
+# but it is why the four headline scenarios stop at 8pm instead.
+#
+# Sunday is omitted: no service runs, so there is nothing to show hour by hour.
+explorer:
+  origins: [downtown, bryan-east, s40th-briarpark]
+  days:
+    - {id: wk, label: Weekday, weekday: Tuesday, date: "2026-09-15", from: 6, to: 21}
+    - {id: sa, label: Saturday, weekday: Saturday, date: "2026-09-19", from: 7, to: 19}
+
 # Task 5 rendering. Values here are metric like the rest of the pipeline; src/units.py
 # converts everything a reader sees into miles and square miles.
 render:

@@ -386,6 +386,33 @@ attempt failed at 1.97:1 and was re-stepped to 2.05:1. A switch to orange is und
 consideration, because the basemap already uses blue for water and green for parks,
 while nothing on it is warm.
 
+## Hourly explorer (Task 5)
+
+Alongside the four headline figures, three origins (Downtown, Bryan Health East Campus,
+S 40th & Briarpark) are computed **every hour**, so a reader can watch service build up
+and fall away rather than inferring it from four snapshots.
+
+| | |
+| --- | --- |
+| Hours | Weekday 6am–9pm (16), Saturday 7am–7pm (13) |
+| Dates | Tue 2026-09-15 and Sat 2026-09-19, the same days as the headline scenarios |
+| Maps | 87 (3 origins × 29 hours), 4.7 MB of WebP including the page |
+| Everything else | Identical settings: 60-minute window, median, 2.9 mph, 10-minute walk cap |
+
+Each hour is a full routing run, validated against the feed's calendar like any other
+scenario. The images share their origin's figure extent, so changing the hour never
+moves the map.
+
+**The last hours of the day deliberately run past the end of service.** A window opening
+at 9pm covers 9–10pm, but the last weekday bus arrives at 9:50pm, so part of that window
+has no bus at all. That is the honest answer for a rider leaving at a random minute in
+that hour, and it is the reason the four headline scenarios stop at 8pm instead: those
+are meant to be compared against the 8am panel, and a half-empty window would not be
+measuring the same thing.
+
+**Sunday is omitted** from the explorer. No service runs, so there is nothing to show
+hour by hour; the blank Sunday panel in the figures makes the point once.
+
 ## Limitations
 
 - **Scheduled service only.** All travel times come from the published timetable, not
