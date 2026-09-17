@@ -9,10 +9,11 @@ The deliverable is a set of side-by-side panels: same origin, four departure sce
 (Tue 8am, Tue 8pm, Sat 5pm, Sun noon). The comparison is the point, not any single map.
 StarTran runs no Sunday service, so the fourth panel is blank.
 
-> **Status: in progress.** Tasks 0–4 are done: the premise is verified, the network is
-> built and checked, the six origins are chosen, and travel times are computed for every
-> origin and scenario. A preview is at `output/preview/task3_contact_sheet.png`. The
-> final map design (Task 5) is next. See [PLAN.md](PLAN.md) for the task breakdown.
+> **Status: maps done, not yet published.** Tasks 0–5 are complete: the premise is
+> verified, the network is built and checked, six origins chosen, travel times computed,
+> and the six final figures rendered to `output/panels/` (print) and `output/web/` (web).
+> What's left is hand-written callouts, a units pass over this file, and publishing the
+> page. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 

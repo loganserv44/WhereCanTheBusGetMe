@@ -95,3 +95,47 @@ scenarios:
     weekday: Sunday
     date: "2026-09-20"
     time: "12:00"
+
+# Task 5 rendering. Values here are metric like the rest of the pipeline; src/units.py
+# converts everything a reader sees into miles and square miles.
+render:
+  dpi: 200                    # the archive/print PNG
+  web_width_px: 2400          # the WebP the site serves
+  # Gaussian smoothing applied to the travel-time surface before contouring, in grid
+  # cells. It hides the 150 m staircase edges at the cost of a few hundred feet of edge
+  # precision. Set to 0 for "honest pixels": every square drawn exactly as computed.
+  smoothing_sigma_cells: 1.0
+  # Each figure's four panels share one extent, fitted to that origin's reach. Small
+  # reaches (Briarpark) would otherwise be zoomed in absurdly far, so the view never
+  # gets narrower than this. Scale differs between origins, hence the scale bar.
+  min_extent_miles: 5
+
+# The basemap is drawn from our own OSM extract, cached to data/processed/basemap.gpkg.
+# (Tiles were tried first: CartoDB now requires an API key, and its tiles come back
+# watermarked without one.) OSM has 921 water bodies and 484 parks in the clip, mostly
+# retention ponds and pocket parks, so both are filtered by area.
+basemap:
+  min_water_hectares: 4
+  min_park_hectares: 6
+
+# Orientation labels, drawn on every panel. Coordinates taken from the OSM extract.
+landmarks:
+  - {name: Downtown, lat: 40.81465, lon: -96.70586}
+  - {name: UNL City Campus, lat: 40.82069, lon: -96.70558}
+  - {name: UNL East Campus, lat: 40.82951, lon: -96.66989}
+  - {name: Airport, lat: 40.84903, lon: -96.75776}
+  - {name: Gateway Mall, lat: 40.81545, lon: -96.63616}
+  - {name: Bryan East, lat: 40.79694, lon: -96.65111}
+  - {name: Pioneers Park, lat: 40.77749, lon: -96.77586}
+  - {name: SouthPointe, lat: 40.74233, lon: -96.67821}
+
+# Hand-written notes on individual panels: the fact behind what the map shows.
+# Keyed by origin slug (data/origins.csv) then scenario id (above). At most one per
+# panel, one short line of roughly 30 characters. Sunday panels get "No buses run on
+# Sundays" automatically. Look times up with `python src/stop_schedule.py` -- every
+# figure in a callout must come from the feed. Example:
+#
+# callouts:
+#   bryan-east:
+#     tue_2000: "Last bus left 7:46pm"
+callouts: {}

@@ -322,11 +322,44 @@ Saturdays at :41). A 60-minute window over hourly service samples every possible
 leaves. The 25th- and 75th-percentile results do differ between the two, which confirms
 they are separate computations.
 
-## Rendering
+## Rendering (Task 5)
 
-*Final design filled in during Task 5.*
+`python src/render_panels.py` produces one figure per origin: four panels (Tuesday 8am,
+Tuesday 8pm, Saturday 5pm, Sunday noon) sharing one extent, so the change across the
+week is a matter of looking rather than arithmetic.
 
-**Color for the travel-time bands (used in the Task 3 preview).** The bands are ordered,
+| | |
+| --- | --- |
+| Layout | 2×2 panels per origin, sized to read on a phone |
+| Extent | Fitted to each origin's own reach, never narrower than 5 miles across. **Scale therefore differs between origins**, so every panel carries a scale bar |
+| Basemap | Drawn from our own OSM extract: major roads, water bodies over 4 ha, parks over 6 ha, and the city-limits outline |
+| Orientation labels | 8 landmarks placed from OSM coordinates, listed in `config.yml` |
+| Band shapes | The travel-time surface is blurred by one grid cell (150 m) and then contoured at 15/30/45/60 minutes |
+| Headline | Area within an hour in square miles, plus the change from Tuesday 8am |
+| Exports | `output/panels/*.png` at 200 dpi (archive) and `output/web/*.webp` at 2,400 px (~0.3 MB each, what the site serves) |
+
+**Why the basemap is ours rather than map tiles.** Label-free CartoDB tiles were tried
+first and would have been less work. CartoDB now requires an API key and serves
+watermarked tiles without one, so the basemap is extracted from the OpenStreetMap data
+the project already downloads. That also removes any dependency on a tile service.
+
+**What the blurring costs.** Smoothing hides the 150 m staircase edges that come from a
+grid, at the price of a few hundred feet of precision at a band's edge. Every panel is
+still driven by the computed cell values; only the outline is softened. Setting
+`render.smoothing_sigma_cells: 0` in `config.yml` draws the raw squares instead, which is
+the honest-pixels view used for checking.
+
+**Gaps inside a shaded area are real.** They are places no bus stop is close enough to,
+since walks are capped at 10 minutes. They are not missing data.
+
+**Units.** Every reader-facing number is converted from metric by `src/units.py`; the
+computation itself stays metric. See "Units" in [PLAN.md](PLAN.md).
+
+**Callouts** stating the fact behind a panel ("Last bus left 7:46pm") are hand-written in
+`config.yml` and looked up with `python src/stop_schedule.py`, so no time on a map is
+generated from memory. The Sunday "No buses run on Sundays" note is automatic.
+
+**Color for the travel-time bands.** The bands are ordered,
 so they use a single hue, never a rainbow. Four steps of one blue ramp (`#0d366b`,
 `#1c5cab`, `#3987e5`, `#86b6ef`), with the darkest meaning reachable soonest. The ramp
 was run through a palette validator as an ordinal scale, and all checks passed:

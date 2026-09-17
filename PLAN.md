@@ -263,6 +263,23 @@ loading, routes, the shared extent, the legend and labels, rather than from scra
 Pieces both scripts need move into shared functions, and the contact sheet stays as the
 checking view. Load the `dataviz` skill before any color or layout change.
 
+**Task 5 DONE (2026-09-17).** Six figures in `output/panels/` (200 dpi PNG, ~1.2 MB) and
+`output/web/` (2,400 px WebP, ~0.3 MB each, so a six-figure page is about 2 MB). Notes:
+- **Tiles were abandoned.** CartoDB now requires an API key and serves tiles stamped
+  "API KEY REQUIRED" without one, so the basemap is extracted from our own OSM clip
+  (major roads, water >4 ha, parks >6 ha, city limits) and cached to
+  `data/processed/basemap.gpkg`. No tile service, no key, no extra credit line beyond
+  OpenStreetMap's.
+- Smoothing is a 1-cell (150 m) gaussian blur of the travel-time surface before
+  contouring; `render.smoothing_sigma_cells: 0` gives raw squares.
+- Fixed during review: legend colliding with panel titles, dates printing over titles,
+  footer running off the page, a landmark label colliding with the origin label, and a
+  long origin name clipping the title (titles now drop the parenthetical).
+- `config.yml` has an empty `callouts: {}` awaiting hand-written notes; the facts to
+  write from come from `python src/stop_schedule.py`.
+- Still to do in Task 6/7: fold the units pass through `README.md`, write the page, and
+  publish.
+
 **Task 6 — Methodology write-up (`methodology.md`).**
 Everything in the Methodology section above, filled in with actual values.
 
