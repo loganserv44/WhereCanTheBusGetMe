@@ -275,8 +275,16 @@ checking view. Load the `dataviz` skill before any color or layout change.
 - Fixed during review: legend colliding with panel titles, dates printing over titles,
   footer running off the page, a landmark label colliding with the origin label, and a
   long origin name clipping the title (titles now drop the parenthetical).
-- `config.yml` has an empty `callouts: {}` awaiting hand-written notes; the facts to
-  write from come from `python src/stop_schedule.py`.
+- Three callouts written into `config.yml`, each from `python src/stop_schedule.py`:
+  "Last bus left 7:46pm" (Bryan East, Tue 8pm), "Last bus left 6:26pm" (Briarpark,
+  Tue 8pm) and "No Saturday buses here" (UNL East Campus, Sat 5pm — that stop has zero
+  Saturday departures, and the map's reach comes from walking to other stops).
+- Colour alternatives explored: teal, orange and violet ramps built on the same
+  lightness ladder as the validated blue, compared in
+  `output/preview/ramp_options.png`. All pass the ordinal checks except teal's first
+  attempt (1.97:1 light end), which was re-stepped to 2.05:1. **Open:** whether to
+  switch the maps from blue to orange, which avoids competing with the basemap's blue
+  water and green parks.
 - Still to do in Task 6/7: fold the units pass through `README.md`, write the page, and
   publish.
 

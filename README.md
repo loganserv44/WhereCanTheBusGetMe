@@ -12,8 +12,8 @@ StarTran runs no Sunday service, so the fourth panel is blank.
 > **Status: maps done, not yet published.** Tasks 0–5 are complete: the premise is
 > verified, the network is built and checked, six origins chosen, travel times computed,
 > and the six final figures rendered to `output/panels/` (print) and `output/web/` (web).
-> What's left is hand-written callouts, a units pass over this file, and publishing the
-> page. See [PLAN.md](PLAN.md) for the task breakdown.
+> What's left is a units pass over this file and publishing the page. See
+> [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 
@@ -21,7 +21,8 @@ Scheduled-service isochrones computed with [r5py](https://r5py.readthedocs.io/)
 (a Python wrapper for Conveyal R5) over StarTran's GTFS feed and an OpenStreetMap
 street network. Travel times are the **median across a 60-minute departure window** —
 leaving at 8:00 versus 8:04 can differ by 15 minutes if you just missed a bus, and a
-single departure time would misrepresent that. Maximum 800 m walk to and from stops.
+single departure time would misrepresent that. Walking is 2.9 mph, with up to a
+10-minute walk (about half a mile) to and from stops.
 
 This reflects the **published schedule**, not real-time performance.
 

@@ -138,4 +138,11 @@ landmarks:
 # callouts:
 #   bryan-east:
 #     tue_2000: "Last bus left 7:46pm"
-callouts: {}
+callouts:
+  bryan-east:
+    tue_2000: "Last bus left 7:46pm"      # stop 786, weekday: 27 departures, last 7:46pm
+  s40th-briarpark:
+    tue_2000: "Last bus left 6:26pm"      # stop 733, weekday: hourly at :26, last 6:26pm
+  unl-east-campus:
+    sat_1700: "No Saturday buses here"    # stop 485: 0 Saturday departures; the map's
+                                          # reach comes from walking to other stops

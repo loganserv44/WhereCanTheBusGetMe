@@ -1,8 +1,12 @@
 # Methodology
 
-> **Status: in progress.** Task 0 (premise verification) is complete and recorded
-> below. The routing, grid, and rendering sections are filled in as those tasks run.
-> See [PLAN.md](PLAN.md) for the task breakdown.
+> **Status: maps complete, not yet published.** Tasks 0–5 are recorded below: premise,
+> network, grid, routing, results and rendering. See [PLAN.md](PLAN.md) for what remains.
+>
+> Distances and areas are given in US units, since the audience is in Lincoln. The
+> computation itself runs in metric (the routing engine takes km/h, the map projection
+> uses meters); `src/units.py` converts at the point of display, and metric appears in
+> parentheses where it is the value actually used.
 
 ## Data provenance
 
@@ -131,8 +135,8 @@ feed's start date and screened for holidays manually**, rather than trusting
 | Source | Geofabrik Nebraska extract, SHA-256 `22919b17…f2f7` (see `data/raw/MANIFEST.json`) |
 | Clip tool | osmium-tool 1.19.1, `extract --strategy complete_ways` |
 | Clip box (W, S, E, N) | `-96.84854, 40.68099, -96.53426, 40.92480` |
-| How the box was set | Extent of all 811 GTFS stops, padded by 5 km |
-| Box size | ~26.5 × 27.0 km (714 km²) |
+| How the box was set | Extent of all 811 GTFS stops, padded by 3 miles (5 km) |
+| Box size | ~16.5 × 16.8 miles (276 sq mi) |
 | Clipped extract | 11.0 MB: 1,410,694 nodes, 214,838 ways, 6,485 relations |
 | Routing engine | R5 v7.5.1 via r5py 1.1.7, on OpenJDK 25.0.2 (Azul Zulu) |
 | Network extent as built | `-96.91052, 40.59033, -96.46381, 41.01681` |
@@ -141,8 +145,8 @@ feed's start date and screened for holidays manually**, rather than trusting
 maintained by hand. The stop extent follows the feed: if StarTran extends a route, the
 next run's clip grows with it.
 
-**Why a 5 km buffer.** Walk legs are capped at about 800 m, so a stop near the edge only
-needs roughly a kilometre of surrounding streets. The extra margin costs almost nothing
+**Why a 3-mile buffer.** Walk legs are capped at about half a mile, so a stop near the
+edge only needs about a mile of surrounding streets. The extra margin costs almost nothing
 (the clip takes seconds) and rules out a street network truncated at the boundary, which
 would make edge trips look slower or unreachable without raising any error.
 
@@ -157,26 +161,26 @@ Travel time is computed from each origin to the centre of every cell in a regula
 
 | | |
 | --- | --- |
-| Cell size | 150 m square |
+| Cell size | about 490 ft square (150 m) |
 | Projection | UTM zone 14N (EPSG:32614), which is metric and nearly distortion-free over Lincoln |
 | Coverage | Every cell whose centre falls inside the clip box |
 | Cells covering the box | 31,922 |
-| **Cells kept** (within 1 km of a stop) | **9,994** |
-| Within 800 m of a stop | 8,765 (27%) |
-| Within 1 km of a stop | 9,994 (31%) |
-| Within 2 km of a stop | 13,895 (44%) |
+| **Cells kept** (within 0.62 mi of a stop) | **9,994** |
+| Within 0.5 mi (800 m) of a stop | 8,765 (27%) |
+| Within 0.62 mi (1 km) of a stop | 9,994 (31%) |
+| Within 1.2 mi (2 km) of a stop | 13,895 (44%) |
 
 **Stable cell ids.** A cell's id comes from its position on a fixed 150 m lattice
 (`id = row × 100000 + column`), not from a running count. The same patch of ground keeps
 its id if the box is later resized, so results from different runs can be joined.
 
 **Distance to nearest stop.** Each cell records its straight-line distance to the nearest
-stop. Cells more than 1 km from every stop are dropped, which removes 69% of the box,
-mostly farmland. This loses nothing, and not only because walk legs to and from stops
-are capped at 10 minutes. With bus + walk routing, R5 caps *every* walk at that limit,
-including a trip that walks the whole way. That was tested directly: walk-only routing
-ignores the cap and reached cells 1.7 km from any stop, but bus + walk routing never
-reached a cell farther than 781 m from one.
+stop. Cells more than 0.62 mi (1 km) from every stop are dropped, which removes 69% of
+the box, mostly farmland. This loses nothing, and not only because walk legs to and from
+stops are capped at 10 minutes. With bus + walk routing, R5 caps *every* walk at that
+limit, including a trip that walks the whole way. That was tested directly: walk-only
+routing ignores the cap and reached cells 1.1 miles from any stop, but bus + walk
+routing never reached a cell farther than 0.48 mi (781 m) from one.
 
 This has a consequence for how the maps read. Places more than a 10-minute walk from an
 origin show as reachable only if a bus gets there. That is consistent with the Sunday
@@ -188,17 +192,17 @@ A network that builds without errors can still route badly. A truncated street c
 stops that fail to link to streets, or a timezone mix-up all produce bad travel times
 with no error. So the network was checked against trips with known right answers
 (`python src/verify_network.py`), departing Tuesday 2026-09-15 at 08:00, with walking at
-4.7 km/h and walk legs capped at 10 minutes. These are the Task 3 settings, read from
-`config.yml`. (The check first ran at 4.8 km/h; the results barely moved.)
+2.9 mph and walk legs capped at 10 minutes. These are the Task 3 settings, read from
+`config.yml`. (The check first ran at 3.0 mph; the results barely moved.)
 
 | Trip | Expected | Result |
 | --- | --- | --- |
-| Downtown (11th & L) → Nebraska Union, ~850 m | Walking is fastest | Walk **15.1 min**. The earliest bus option (route 25 Vine) arrives at 17.9 min. |
-| Downtown (11th & L) → East Campus (N 33rd & Holdrege), ~3.5 km | Transit is fastest | **28.8 min** door to door on route 42 Bethany. Walking the whole way takes 59.6 min. |
+| Downtown (11th & L) → Nebraska Union, ~0.5 mi | Walking is fastest | Walk **15.1 min**. The earliest bus option (route 25 Vine) arrives at 17.9 min. |
+| Downtown (11th & L) → East Campus (N 33rd & Holdrege), ~2.2 mi | Transit is fastest | **28.8 min** door to door on route 42 Bethany. Walking the whole way takes 59.6 min. |
 
-The walking time checks out independently. The two points are 716 m apart north–south
-and 469 m east–west, so walking downtown's street grid covers about 1.19 km, which is
-about 15 minutes at 4.7 km/h.
+The walking time checks out independently. The two points are 0.44 mi apart north–south
+and 0.29 mi east–west, so walking downtown's street grid covers about 0.74 mi, which is
+about 15 minutes at 2.9 mph.
 
 **How trips were compared.** Each option was timed door to door, from the 08:00
 departure to arrival. R5 returns options that start at different moments within the
@@ -213,39 +217,39 @@ trimmed grid took 1.1 seconds. At Tuesday 08:00:
 
 | Within | Cells | Area |
 | --- | --- | --- |
-| 15 min | 114 | ~3 km² |
-| 30 min | 1,147 | ~26 km² |
-| 45 min | 3,464 | ~78 km² |
-| 60 min | 5,400 | ~122 km² |
+| 15 min | 114 | ~1.2 sq mi |
+| 30 min | 1,147 | ~10 sq mi |
+| 45 min | 3,464 | ~30 sq mi |
+| 60 min | 5,400 | ~47 sq mi |
 
 The 15-minute figure matches walking alone: 15 minutes on a street grid covers a
-diamond of about 3 km². That's expected, since the median over the window includes
+diamond of about 1.2 sq mi. That's expected, since the median over the window includes
 waiting for a bus.
 
-No reachable cell was more than 757 m from a stop, inside the ~783 m a 10-minute walk
-covers at 4.7 km/h. On the untrimmed grid at 4.8 km/h the figure was 781 m. So trimming
-the grid to cells within 1 km of a stop (see Destination grid) loses nothing.
+No reachable cell was more than 0.47 mi (757 m) from a stop, inside the ~0.48 mi a
+10-minute walk covers at 2.9 mph. So trimming the grid to cells within 0.62 mi of a stop
+(see Destination grid) loses nothing.
 
 ## Routing parameters (Task 3)
 
 | | |
 | --- | --- |
 | Modes | Bus + walking (`TRANSIT`, `WALK`) |
-| Walking speed | **4.7 km/h** (1.31 m/s) |
-| Walk cap | 10 minutes per walk, about 780 m |
+| Walking speed | **2.9 mph** (4.7 km/h, 1.31 m/s) |
+| Walk cap | 10 minutes per walk, about half a mile (780 m) |
 | Departure window | 60 minutes, a departure every minute |
 | Reported | Median travel time (25th and 75th percentiles kept) |
 | Longest trip counted | 60 minutes |
 | Bands | 0–15, 15–30, 30–45, 45–60 minutes |
 
-**Why 4.7 km/h.** It is the usual outdoor walking pace of healthy adults, 1.31 m/s
+**Why 2.9 mph.** It is the usual outdoor walking pace of healthy adults, 1.31 m/s
 (95% CI 1.27–1.35), from a meta-analysis of 35 studies and 14,015 participants:
 [Outdoor Walking Speeds of Apparently Healthy Adults: A Systematic Review and
 Meta-analysis](https://pubmed.ncbi.nlm.nih.gov/33030707/). Two reference points: in
 [Knoblauch et al.'s field studies](https://journals.sagepub.com/doi/10.1177/0361198196153800104),
 pedestrians crossed streets at 1.51 m/s (younger) and 1.25 m/s (65 and older), faster
 than everyday walking because people hurry in crosswalks. Many older riders and people
-carrying groceries walk slower than 4.7 km/h, so for them these maps are optimistic.
+carrying groceries walk slower than 2.9 mph, so for them these maps are optimistic.
 
 **Why a window and a median.** Leaving at 8:00 instead of 8:04 can cost a full wait
 for the next bus. R5 routes a departure every minute of the window and reports the
@@ -254,8 +258,8 @@ median, the travel time a rider leaving at a random minute would typically see.
 Two r5py defaults differ from this methodology and are overridden on every routing
 call, because otherwise travel times would be quietly wrong:
 
-- **Walking speed** defaults to 3.6 km/h. The methodology specifies **4.7 km/h**
-  (`speed_walking=4.7`).
+- **Walking speed** defaults to 3.6 km/h (2.2 mph). The methodology specifies **2.9 mph**
+  (`speed_walking=4.7`, in km/h as the library requires).
 - **Departure time window** defaults to 10 minutes. The methodology specifies **60
   minutes** (`departure_time_window=timedelta(minutes=60)`).
 
@@ -283,12 +287,12 @@ service.
 ## Origins
 
 Chosen for what each says about the network, using the feed's schedule and
-OpenStreetMap. Apartment, supermarket and hospital counts are OSM features within 800 m
-of the stop. Full rationale is in `data/origins.csv`.
+OpenStreetMap. Apartment, supermarket and hospital counts are OSM features within half a
+mile of the stop. Full rationale is in `data/origins.csv`.
 
 | Origin | Stop | Why |
 | --- | --- | --- |
-| Downtown (11th & P) | 246 | Best case: 315 weekday trips, the most of any stop. Also stands in for UNL City Campus, 0.9 km away. |
+| Downtown (11th & P) | 246 | Best case: 315 weekday trips, the most of any stop. Also stands in for UNL City Campus, 0.6 mi away. |
 | UNL East Campus | 485 | The UNL student: 302 weekday trips, none on Saturday. |
 | N 27th & Superior | 480 | Suburban housing and groceries: 88 apartment buildings and 3 supermarkets nearby. |
 | Bryan Health East Campus | 786 | The shift worker: last weekday bus 7:46pm. |
@@ -297,23 +301,24 @@ of the stop. Full rationale is in `data/origins.csv`.
 
 ## Results (Task 3)
 
-Area reachable within 60 minutes, median travel time, km². Each grid cell is
-0.0225 km².
+Area reachable within 60 minutes, median travel time, in square miles. Each grid cell is
+0.0087 sq mi (about 5.6 acres). For scale, Lincoln's city limits enclose about 105 sq mi.
 
 | Origin | Tue 8am | Tue 8pm | Sat 5pm | Sun noon |
 | --- | ---: | ---: | ---: | ---: |
-| Downtown (11th & P) | 111.2 | 25.7 | 53.9 | 0 |
-| UNL East Campus | 71.7 | 13.9 | 27.3 | 0 |
-| N 27th & Superior | 52.9 | 17.7 | 22.4 | 0 |
-| Bryan Health East Campus | 64.8 | **1.4** | 26.9 | 0 |
-| S 40th & Briarpark | 11.0 | **1.3** | 11.0 | 0 |
-| 48th & R (Target) | 57.3 | 14.0 | 21.8 | 0 |
+| Downtown (11th & P) | 42.9 | 9.9 | 20.8 | 0 |
+| UNL East Campus | 27.7 | 5.4 | 10.5 | 0 |
+| N 27th & Superior | 20.4 | 6.8 | 8.6 | 0 |
+| Bryan Health East Campus | 25.0 | **0.5** | 10.4 | 0 |
+| S 40th & Briarpark | 4.2 | **0.5** | 4.2 | 0 |
+| 48th & R (Target) | 22.1 | 5.4 | 8.4 | 0 |
 
-Exact inputs, software versions and per-band counts are in `output/run_manifest.json`.
+Exact inputs, software versions and per-band counts are in `output/run_manifest.json`,
+which records the metric values the pipeline computed.
 
-**Tuesday 8pm at Bryan East and Briarpark is walking only.** At 1.3–1.4 km², both
-come to about 60 cells, which is what a 10-minute walk covers. No bus reaches either
-origin in that window.
+**Tuesday 8pm at Bryan East and Briarpark is walking only.** At 0.5 sq mi, both come to
+about 60 cells, which is what a 10-minute walk covers. No bus reaches either origin in
+that window.
 
 **Briarpark's Tuesday 8am and Saturday 5pm results are identical, and that's correct.**
 Route 56 is the only service, and it runs hourly on both days (weekdays at :26,
@@ -332,9 +337,9 @@ week is a matter of looking rather than arithmetic.
 | --- | --- |
 | Layout | 2×2 panels per origin, sized to read on a phone |
 | Extent | Fitted to each origin's own reach, never narrower than 5 miles across. **Scale therefore differs between origins**, so every panel carries a scale bar |
-| Basemap | Drawn from our own OSM extract: major roads, water bodies over 4 ha, parks over 6 ha, and the city-limits outline |
+| Basemap | Drawn from our own OSM extract: major roads, water bodies over 10 acres, parks over 15 acres, and the city-limits outline |
 | Orientation labels | 8 landmarks placed from OSM coordinates, listed in `config.yml` |
-| Band shapes | The travel-time surface is blurred by one grid cell (150 m) and then contoured at 15/30/45/60 minutes |
+| Band shapes | The travel-time surface is blurred by one grid cell (about 490 ft) and then contoured at 15/30/45/60 minutes |
 | Headline | Area within an hour in square miles, plus the change from Tuesday 8am |
 | Exports | `output/panels/*.png` at 200 dpi (archive) and `output/web/*.webp` at 2,400 px (~0.3 MB each, what the site serves) |
 
@@ -343,8 +348,8 @@ first and would have been less work. CartoDB now requires an API key and serves
 watermarked tiles without one, so the basemap is extracted from the OpenStreetMap data
 the project already downloads. That also removes any dependency on a tile service.
 
-**What the blurring costs.** Smoothing hides the 150 m staircase edges that come from a
-grid, at the price of a few hundred feet of precision at a band's edge. Every panel is
+**What the blurring costs.** Smoothing hides the 490-foot staircase edges that come from
+a grid, at the price of a few hundred feet of precision at a band's edge. Every panel is
 still driven by the computed cell values; only the outline is softened. Setting
 `render.smoothing_sigma_cells: 0` in `config.yml` draws the raw squares instead, which is
 the honest-pixels view used for checking.
@@ -357,16 +362,29 @@ computation itself stays metric. See "Units" in [PLAN.md](PLAN.md).
 
 **Callouts** stating the fact behind a panel ("Last bus left 7:46pm") are hand-written in
 `config.yml` and looked up with `python src/stop_schedule.py`, so no time on a map is
-generated from memory. The Sunday "No buses run on Sundays" note is automatic.
+generated from memory. The Sunday "No buses run on Sundays" note is automatic. Three are
+in use:
 
-**Color for the travel-time bands.** The bands are ordered,
-so they use a single hue, never a rainbow. Four steps of one blue ramp (`#0d366b`,
-`#1c5cab`, `#3987e5`, `#86b6ef`), with the darkest meaning reachable soonest. The ramp
-was run through a palette validator as an ordinal scale, and all checks passed:
-lightness steps in order, every adjacent step at least 0.06 apart in lightness, the
-lightest step at 2.06:1 contrast against the background, and a hue spread of 4°. Every
-panel also carries its area as a number, and the full results are in a CSV table, so
-nothing is readable only as color.
+| Figure | Panel | Note | Source |
+| --- | --- | --- | --- |
+| Bryan Health East Campus | Tue 8pm | "Last bus left 7:46pm" | Stop 786: 27 weekday departures, last at 7:46pm, none 8–9pm |
+| S 40th & Briarpark | Tue 8pm | "Last bus left 6:26pm" | Stop 733: hourly at :26, last at 6:26pm |
+| UNL East Campus | Sat 5pm | "No Saturday buses here" | Stop 485: zero Saturday departures. The panel still shades 11 sq mi, reached by walking to other stops |
+
+**Color for the travel-time bands.** The bands are ordered, so they use a single hue,
+never a rainbow. Four steps of one blue ramp (`#0d366b`, `#1c5cab`, `#3987e5`,
+`#86b6ef`), with the darkest meaning reachable soonest. The ramp was run through a
+palette validator as an ordinal scale, and all checks passed: lightness steps in order,
+every adjacent step at least 0.06 apart in lightness, the lightest step at 2.06:1
+contrast against the background, and a hue spread of 4°. Every panel also carries its
+area as a number, and the full results are in a CSV table, so nothing is readable only
+as color.
+
+Three alternatives were built on the same lightness ladder and validated the same way —
+teal, orange and violet, compared in `output/preview/ramp_options.png`. Teal's first
+attempt failed at 1.97:1 and was re-stepped to 2.05:1. A switch to orange is under
+consideration, because the basemap already uses blue for water and green for parks,
+while nothing on it is warm.
 
 ## Limitations
 
