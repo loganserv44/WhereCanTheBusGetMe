@@ -112,6 +112,10 @@ explorer:
   days:
     - {id: wk, label: Weekday, weekday: Tuesday, date: "2026-09-15", from: 6, to: 21}
     - {id: sa, label: Saturday, weekday: Saturday, date: "2026-09-19", from: 7, to: 19}
+    # Sunday is a single entry, not 13 identical blank hours: no service runs, so there
+    # is no shape to step through. The page hides the hour timeline for any day with one
+    # entry, and the map shows the city with nothing reachable.
+    - {id: su, label: Sunday, weekday: Sunday, date: "2026-09-20", from: 12, to: 12}
 
 # Task 5 rendering. Values here are metric like the rest of the pipeline; src/units.py
 # converts everything a reader sees into miles and square miles.

@@ -1,5 +1,5 @@
 {
- "generated_utc": "2026-09-17T22:51:23+00:00",
+ "generated_utc": "2026-09-17T23:03:33+00:00",
  "feed_version": "20260828",
  "walking_mph": 2.9,
  "max_walk_minutes": 10,
@@ -20,6 +20,14 @@
    "date": "2026-09-19",
    "from": 7,
    "to": 19
+  },
+  {
+   "id": "su",
+   "label": "Sunday",
+   "weekday": "Sunday",
+   "date": "2026-09-20",
+   "from": 12,
+   "to": 12
   }
  ],
  "origins": [
@@ -408,6 +416,18 @@
    "routed": true
   },
   {
+   "origin": "downtown",
+   "scenario": "su_1200",
+   "day": "su",
+   "day_label": "Sunday",
+   "hour": 12,
+   "label": "Sunday noon",
+   "image": "downtown__su_1200.webp",
+   "area": null,
+   "km2": 0.0,
+   "routed": false
+  },
+  {
    "origin": "bryan-east",
    "scenario": "wk_0600",
    "day": "wk",
@@ -756,6 +776,18 @@
    "routed": true
   },
   {
+   "origin": "bryan-east",
+   "scenario": "su_1200",
+   "day": "su",
+   "day_label": "Sunday",
+   "hour": 12,
+   "label": "Sunday noon",
+   "image": "bryan-east__su_1200.webp",
+   "area": null,
+   "km2": 0.0,
+   "routed": false
+  },
+  {
    "origin": "s40th-briarpark",
    "scenario": "wk_0600",
    "day": "wk",
@@ -1102,6 +1134,18 @@
    "area": "0.5 sq mi",
    "km2": 1.3,
    "routed": true
+  },
+  {
+   "origin": "s40th-briarpark",
+   "scenario": "su_1200",
+   "day": "su",
+   "day_label": "Sunday",
+   "hour": 12,
+   "label": "Sunday noon",
+   "image": "s40th-briarpark__su_1200.webp",
+   "area": null,
+   "km2": 0.0,
+   "routed": false
   }
  ]
 }

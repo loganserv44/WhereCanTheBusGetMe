@@ -292,16 +292,17 @@ per hour so a reader watches service build and fall away instead of inferring it
 four snapshots.
 - `config.yml` → `explorer:` lists the origins (downtown, Bryan East, Briarpark) and day
   ranges (weekday 6am–9pm, Saturday 7am–7pm). `compute_isochrones.py` expands those into
-  one scenario per hour and validates each date like any other. **87 extra grids**, about
+  one scenario per hour and validates each date like any other. **90 extra grids**, about
   90 seconds of routing.
 - `render_panels.py` renders each hour as a single-panel image (no burned-in headline —
   the page supplies the number as text) sharing that origin's figure extent, so nothing
-  jumps when you change hour. 87 images, 4.7 MB including the page.
+  jumps when you change hour. 90 images, 4.8 MB including the page.
 - `output/web/explorer/index.html` is the page: origin and day buttons, and an hour
   timeline whose bars are the area reachable that hour, so the shape of the day is
   visible before you click anything. It reads `data.js` (a script assignment rather than
   `fetch`, so it also works opened straight from disk).
-- Sunday is omitted: no service, nothing to show hour by hour.
+- Sunday is a single entry rather than 13 identical blank hours; the page hides the hour
+  timeline for any day with one entry.
 - Still to do: the site page itself and publishing (Task 7).
 
 **Task 6 — Methodology write-up (`methodology.md`).**

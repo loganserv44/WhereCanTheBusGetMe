@@ -394,9 +394,9 @@ and fall away rather than inferring it from four snapshots.
 
 | | |
 | --- | --- |
-| Hours | Weekday 6am–9pm (16), Saturday 7am–7pm (13) |
-| Dates | Tue 2026-09-15 and Sat 2026-09-19, the same days as the headline scenarios |
-| Maps | 87 (3 origins × 29 hours), 4.7 MB of WebP including the page |
+| Hours | Weekday 6am–9pm (16), Saturday 7am–7pm (13), Sunday (1) |
+| Dates | Tue 2026-09-15, Sat 2026-09-19 and Sun 2026-09-20, the same days as the headline scenarios |
+| Maps | 90 (3 origins × 30 entries), 4.8 MB of WebP including the page |
 | Everything else | Identical settings: 60-minute window, median, 2.9 mph, 10-minute walk cap |
 
 Each hour is a full routing run, validated against the feed's calendar like any other
@@ -410,8 +410,10 @@ that hour, and it is the reason the four headline scenarios stop at 8pm instead:
 are meant to be compared against the 8am panel, and a half-empty window would not be
 measuring the same thing.
 
-**Sunday is omitted** from the explorer. No service runs, so there is nothing to show
-hour by hour; the blank Sunday panel in the figures makes the point once.
+**Sunday is one entry, not 13 blank hours.** No service runs, so there is no shape to
+step through: the page hides the hour timeline for any day with a single entry and shows
+one map with nothing reachable. Computing 13 identical empty hours would have added
+files without adding a fact.
 
 ## Limitations
 

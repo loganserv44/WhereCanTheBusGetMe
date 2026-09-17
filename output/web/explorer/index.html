@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <div class="timeline">
+    <div class="timeline" id="timeline">
       <h2 style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600">
         Leaving at — each bar is the area reachable that hour</h2>
       <div class="bars" id="bars" role="group" aria-label="Departure hour"></div>
@@ -171,6 +171,8 @@
     }
     const current = hours.find((p) => p.hour === state.hour);
     const peak = Math.max(...hours.map((p) => p.km2 || 0)) || 1;
+    // A day with a single entry (Sunday: no service) has no shape to step through.
+    document.getElementById("timeline").hidden = hours.length === 1;
 
     barsEl.innerHTML = "";
     for (const p of hours) {
