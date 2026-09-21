@@ -60,7 +60,10 @@
               border: 1px solid var(--hairline); border-radius: 6px; }
   figure { margin: 0; }
   figure img { width: 100%; height: auto; display: block; background: #fff;
-               border: 1px solid var(--hairline); }
+               border: 1px solid var(--hairline); transition: opacity .12s ease; }
+  /* Only seen when a map isn't in cache yet: the previous one stays up, dimmed, so a
+     slow load reads as "working" rather than as a broken image. */
+  figure.loading img { opacity: .45; }
   .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 0;
             color: var(--ink2); font-size: 14px; }
   .legend span { display: flex; align-items: center; gap: 7px; }
@@ -115,8 +118,8 @@
   </div>
   <input class="shareurl" id="shareUrl" readonly hidden aria-label="Link to this map">
 
-  <figure>
-    <img id="map" alt="" width="1200" height="1200">
+  <figure id="fig">
+    <img id="map" alt="" width="1200" height="1200" fetchpriority="high" decoding="async">
   </figure>
 
   <div class="legend" id="legend"></div>
@@ -209,9 +212,61 @@
 
   const barsEl = document.getElementById("bars");
   const imgEl = document.getElementById("map");
+  const figEl = document.getElementById("fig");
+
+  // Preloading runs one file at a time and at low priority. Firing a whole day at once
+  // was actively harmful: a browser opens about six connections per host over HTTP/1.1,
+  // so a burst of preloads sits in front of the map the reader is waiting for, and the
+  // page falls back to alt text until the queue drains.
+  const queued = new Set();
+  const queue = [];
+  let pumping = false;
 
   function preload(list) {
-    for (const p of list) { const i = new Image(); i.src = p.image; }
+    for (const p of list) {
+      if (!p || queued.has(p.image)) continue;
+      queued.add(p.image);
+      queue.push(p.image);
+    }
+    if (!pumping) pump();
+  }
+
+  function pump() {
+    const src = queue.shift();
+    if (!src) { pumping = false; return; }
+    pumping = true;
+    const img = new Image();
+    img.fetchPriority = "low";
+    img.onload = img.onerror = pump;
+    img.src = src;
+  }
+
+  // Swapping the src directly leaves the figure empty while the new file loads, which is
+  // what produced a blank map with alt text. Decode the next one off-screen and only then
+  // put it in place, so the previous map stays up until its replacement is ready. The
+  // token guards against a slow load landing after a faster, later one.
+  let swapToken = 0;
+  let idleTimer = null;
+
+  function showMap(panel, alt) {
+    const token = ++swapToken;
+    const next = new Image();
+    next.fetchPriority = "high";
+    next.src = panel.image;
+    queued.add(panel.image);
+
+    const apply = () => {
+      if (token !== swapToken) return;   // a later switch already won
+      imgEl.src = next.src;
+      imgEl.alt = alt;
+      figEl.classList.remove("loading");
+    };
+
+    if (next.complete) { apply(); return; }   // already cached: swap with no flicker
+    figEl.classList.add("loading");
+    // decode() rejects on a broken file; apply anyway, so a genuinely missing image
+    // shows its alt text instead of leaving a stale map up forever.
+    (next.decode ? next.decode() : Promise.resolve()).then(apply, apply);
   }
 
   // Panel labels read "Weekday 8am". Inside a chosen day that prefix is noise -- the
@@ -267,16 +322,19 @@
       current.routed ? "reachable within an hour" : "no buses run";
     document.getElementById("compare").innerHTML = compareText(current, peak, hours);
 
-    imgEl.src = current.image;
-    imgEl.alt = `Map of the area reachable from ` +
+    showMap(current, `Map of the area reachable from ` +
       `${D.origins.find((o) => o.slug === state.origin).name} leaving at ` +
-      `${current.label}: ${current.area || "nowhere"}`;
+      `${current.label}: ${current.area || "nowhere"}`);
 
     for (const [slug, b] of originBtns) b.setAttribute("aria-pressed", String(slug === state.origin));
     for (const [id, b] of dayBtns) b.setAttribute("aria-pressed", String(id === state.day));
 
     const i = hours.findIndex((p) => p.hour === state.hour);
-    preload([hours[i + 1], hours[i - 1]].filter(Boolean));
+    preload([hours[i + 1], hours[i - 1]]);
+    // Then quietly fetch the rest of this day, so stepping or playing through it later
+    // costs nothing. Queued behind the neighbours above and fetched one at a time.
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => preload(hours), 900);
 
     writeHash();
     // If the copy fallback is open, it must keep showing a link to what's on screen.
