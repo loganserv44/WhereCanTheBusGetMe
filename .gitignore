@@ -43,6 +43,10 @@ r5py*.log
 # --- Secrets / local config ----------------------------------------------
 .env
 *.local.yml
+# .claude/launch.json IS tracked -- it is how the explorer page gets served for a
+# look (python -m http.server; the page needs http:// for the clipboard API, and
+# opening it over file:// silently falls back).
+.claude/settings.local.json
 
 # --- OS / editors ---------------------------------------------------------
 .DS_Store

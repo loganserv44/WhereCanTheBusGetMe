@@ -13,7 +13,8 @@ StarTran runs no Sunday service, so the fourth panel is blank.
 > verified, the network is built and checked, six origins chosen, travel times computed,
 > and the six final figures rendered to `output/panels/` (print) and `output/web/` (web).
 > There is also an hourly explorer — `output/web/explorer/index.html`, openable straight
-> from disk — with one map per hour for three origins. What's left is the site page and
+> from disk — with one map per hour for four origins, and the chosen origin, day and hour
+> kept in the URL so one map can be linked to. What's left is the site page and
 > publishing. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)

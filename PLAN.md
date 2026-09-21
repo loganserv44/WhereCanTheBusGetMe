@@ -1,11 +1,11 @@
 # Where the Bus Goes (Working Title)
 ## Isochrone maps of StarTran transit access in Lincoln, NE
 
-### Where to pick up (updated 2026-09-17)
+### Where to pick up (updated 2026-09-21)
 
 **Done:** Tasks 0–5. The premise is verified, the network built and checked, six origins
 chosen, travel times computed, six 2×2 figures rendered, and an hourly explorer built for
-four origins.
+four origins. The explorer's state lives in the URL, so a single map can be linked to.
 
 **Next: Task 7 — publish.** Hand-write `where-the-bus-goes/index.html` in the
 `loganserv44.github.io` repo and copy the images across with a short `src/publish.py`.
@@ -437,11 +437,46 @@ get them home.
   start linking out to the project pages. Out of scope here, but this project makes it
   three unlinked pages.
 
+### After v1 — triaged 2026-09-21
+
+The maps answer "how big is the reachable area." Read once, that is a novelty: nothing
+changes and no number in it connects to a reader's life. Two ways out — give the area a
+denominator (what is inside it), or give it a reason to change (new data over time).
+Ideas were sorted against that:
+
+- ~~**Permalinks.**~~ **Done 2026-09-21.** The explorer's origin/day/hour live in the URL
+  fragment (`#bryan-east/wk/20`), with a copy-link button. Without this there was no way
+  to point someone at the specific map you were arguing about.
+- **Opportunity access — agreed, not started.** Join the existing travel-time grid to
+  things people actually go to, so the headline becomes "at 8am you can reach 3
+  supermarkets and 41,000 jobs; at 8pm, 1 and 7,000." Supermarkets, clinics and schools
+  need no new data — the OSM extract is already on disk and `data/origins.csv` was
+  written by counting them. Jobs and population need one new source (LEHD LODES, block
+  level). This is the change that makes the project useful rather than striking. It
+  supersedes the deferred "more meaningful panel headline" item above.
+- **Feed archiving — agreed, start early.** StarTran republishes its GTFS; `fetch_data.py`
+  already hashes every download but overwrites the file. Keeping each distinct feed would
+  allow "what service changed, and who lost access" later. Worth starting before it is
+  worth building: the value accrues with elapsed time and **cannot be backfilled.**
+- **Click-anywhere origins — declined.** The obvious ask and the expensive one. Honest
+  versions need either server-side routing (which ends GitHub Pages) or a precomputed
+  origin lattice whose storage grows fast. Days of work; revisit only if the project
+  outgrows being a set of maps.
+- **Real-time vs. scheduled — declined.** A GTFS-RT feed exists and nobody publishes
+  on-time performance for Lincoln, but it needs a collector running unattended for weeks
+  before it says anything. A different project with different failure modes.
+- **Equity overlay — declined.** Reach against demographics. Same spatial join as
+  opportunity access, so it stays cheap to add later if it is ever wanted.
+
+Also rejected: **more origins or more hours.** It feels like progress and is not — the
+result is more blobs, and coverage was never the weakness.
+
 ### Out of scope for v1
 
 - A pan-and-zoom map (MapLibre + the exported GeoJSON) — still out of scope. The hourly
   explorer gives interactivity without it: pre-rendered images swapped by buttons, so
   there is no map library, no tile key, and the extent stays fixed (a change you see is
   a change in service, not in the view).
-- POI / destination overlays.
+- POI / destination overlays. (Counting what is reachable is not the same as drawing pins
+  on it; see opportunity access above.)
 - Real-time / observed performance (a GTFS-RT feed exists).

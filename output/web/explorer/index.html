@@ -41,6 +41,10 @@
   .readout .when { font-size: 20px; font-weight: 700; }
   .readout .area { font-size: 20px; font-weight: 700; color: var(--accent); }
   .readout .note { color: var(--ink2); }
+  button.share { font-size: 13px; padding: 6px 12px; margin-left: auto; }
+  .shareurl { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px;
+              margin: 0 0 12px; color: var(--ink2); background: #fff;
+              border: 1px solid var(--hairline); border-radius: 6px; }
   figure { margin: 0; }
   figure img { width: 100%; height: auto; display: block; background: #fff;
                border: 1px solid var(--hairline); }
@@ -88,7 +92,9 @@
     <span class="when" id="when"></span>
     <span class="area" id="area"></span>
     <span class="note" id="note">reachable within an hour</span>
+    <button type="button" class="share" id="share">Copy link to this map</button>
   </div>
+  <input class="shareurl" id="shareUrl" readonly hidden aria-label="Link to this map">
 
   <figure>
     <img id="map" alt="" width="1200" height="1200">
@@ -116,6 +122,34 @@
     .sort((a, b) => a.hour - b.hour);
 
   const state = { origin: D.origins[0].slug, day: D.days[0].id, hour: null };
+
+  // Permalinks. The URL fragment carries origin/day/hour (#bryan-east/wk/20) so one
+  // specific map can be linked to. A stale or hand-edited fragment degrades instead of
+  // failing: an unknown origin or day is ignored, and render() already snaps an hour the
+  // chosen day doesn't have back to that day's first.
+  const key = () => `${state.origin}/${state.day}/${state.hour}`;
+
+  function applyHash() {
+    const [origin, day, hour] = decodeURIComponent(location.hash.slice(1)).split("/");
+    if (D.origins.some((o) => o.slug === origin)) state.origin = origin;
+    if (D.days.some((d) => d.id === day)) state.day = day;
+    const h = parseInt(hour, 10);
+    state.hour = Number.isInteger(h) ? h : null;
+  }
+
+  function writeHash() {
+    if (location.hash === "#" + key()) return;
+    try {
+      // replaceState, not pushState: arrowing through sixteen hours shouldn't leave
+      // sixteen entries for the back button to walk back out through.
+      history.replaceState(null, "", "#" + key());
+    } catch {
+      // Chrome blocks the History API on file:// pages, and this one is meant to open
+      // from disk. Assigning the hash works everywhere; it fires hashchange, which the
+      // listener below ignores because the state already matches.
+      location.hash = key();
+    }
+  }
 
   function mkButton(parent, label, onClick, title) {
     const b = document.createElement("button");
@@ -200,7 +234,42 @@
 
     const i = hours.findIndex((p) => p.hour === state.hour);
     preload([hours[i + 1], hours[i - 1]].filter(Boolean));
+
+    writeHash();
+    // If the copy fallback is open, it must keep showing a link to what's on screen.
+    if (!shareUrl.hidden) shareUrl.value = location.href;
   }
+
+  const shareBtn = document.getElementById("share");
+  const shareUrl = document.getElementById("shareUrl");
+  const SHARE_LABEL = shareBtn.textContent;
+  let shareTimer = null;
+
+  shareBtn.addEventListener("click", async () => {
+    const say = (msg) => {
+      shareBtn.textContent = msg;
+      clearTimeout(shareTimer);
+      shareTimer = setTimeout(() => { shareBtn.textContent = SHARE_LABEL; }, 2500);
+    };
+    try {
+      await navigator.clipboard.writeText(location.href);
+      shareUrl.hidden = true;
+      say("Link copied");
+    } catch {
+      // The clipboard API needs a secure context, which file:// is not. Show the URL
+      // selected instead, so Ctrl+C still does the job.
+      shareUrl.hidden = false;
+      shareUrl.value = location.href;
+      shareUrl.select();
+      say("Press Ctrl+C");
+    }
+  });
+
+  addEventListener("hashchange", () => {
+    const before = key();
+    applyHash();
+    if (key() !== before) render();
+  });
 
   addEventListener("keydown", (e) => {
     const hours = hoursFor(state.day);
@@ -209,6 +278,7 @@
     if (e.key === "ArrowLeft" && i > 0) { state.hour = hours[i - 1].hour; render(); }
   });
 
+  applyHash();
   render();
 })();
 </script>
