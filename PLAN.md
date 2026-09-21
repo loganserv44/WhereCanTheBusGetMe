@@ -5,7 +5,14 @@
 
 **Done:** Tasks 0–5. The premise is verified, the network built and checked, six origins
 chosen, travel times computed, six 2×2 figures rendered, and an hourly explorer built for
-four origins. The explorer's state lives in the URL, so a single map can be linked to.
+four origins. The explorer's state lives in the URL, so a single map can be linked to; it
+also plays a day start to finish, and its timeline scrubs under a drag.
+
+**In progress: styling the explorer.** Playback and the headline stat are done. Still on
+the list, roughly in order: a two-column layout so the map isn't below the fold on a
+laptop, a type and colour pass (accent derived from the map ramp, not chosen separately),
+surfacing each origin's note from `data/origins.csv`, and a last-bus marker on the
+timeline.
 
 **Next: Task 7 — publish.** Hand-write `where-the-bus-goes/index.html` in the
 `loganserv44.github.io` repo and copy the images across with a short `src/publish.py`.

@@ -29,19 +29,32 @@
   .controls { padding: 16px 0 18px; border-top: 1px solid var(--hairline);
               border-bottom: 1px solid var(--hairline); margin-bottom: 20px; }
   .timeline { margin: 22px 0 6px; }
-  .bars { display: flex; align-items: flex-end; gap: 3px; height: 62px; }
+  .tlhead { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+  .tlhead h2 { margin: 0; }
+  /* pan-y, not none: a vertical swipe over the bars still scrolls the page, while
+     horizontal movement is ours to scrub with. */
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 62px;
+          touch-action: pan-y; }
   .bars button { flex: 1 1 0; padding: 0; border: 0; border-radius: 3px 3px 0 0;
-                 background: var(--bar); min-width: 0; cursor: pointer; }
+                 background: var(--bar); min-width: 0; cursor: ew-resize; }
   .bars button[aria-pressed="true"] { background: var(--accent); }
   .bars button:hover { outline: 2px solid var(--muted); outline-offset: 1px; }
   .ticks { display: flex; justify-content: space-between; color: var(--muted);
            font-size: 12px; margin-top: 6px; }
-  .readout { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline;
-             margin: 18px 0 10px; }
-  .readout .when { font-size: 20px; font-weight: 700; }
-  .readout .area { font-size: 20px; font-weight: 700; color: var(--accent); }
-  .readout .note { color: var(--ink2); }
-  button.share { font-size: 13px; padding: 6px 12px; margin-left: auto; }
+  button.play { margin-left: auto; font-size: 13px; padding: 5px 13px; min-width: 88px;
+                white-space: nowrap; flex: 0 0 auto; }
+  button.play[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
+                                     color: #fff; }
+
+  .readout { display: flex; flex-wrap: wrap; gap: 4px 28px; align-items: flex-end;
+             margin: 22px 0 12px; }
+  .eyebrow { margin: 0; color: var(--ink2); font-size: 15px; }
+  .statnum { margin: 2px 0 0; font-size: clamp(38px, 7vw, 56px); line-height: 1;
+             font-weight: 700; color: var(--accent); letter-spacing: -.02em; }
+  .statsub { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
+  .compare { margin: 0 0 4px; color: var(--ink2); font-size: 15px; max-width: 30ch; }
+  .compare b { color: var(--ink); font-weight: 700; }
+  button.share { font-size: 13px; padding: 6px 12px; margin: 0 0 4px auto; }
   .shareurl { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px;
               margin: 0 0 12px; color: var(--ink2); background: #fff;
               border: 1px solid var(--hairline); border-radius: 6px; }
@@ -81,17 +94,23 @@
     </div>
 
     <div class="timeline" id="timeline">
-      <h2 style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600">
-        Leaving at — each bar is the area reachable that hour</h2>
+      <div class="tlhead">
+        <h2 style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600">
+          Leaving at — each bar is the area reachable that hour</h2>
+        <button type="button" class="play" id="play" aria-pressed="false">▶ Play day</button>
+      </div>
       <div class="bars" id="bars" role="group" aria-label="Departure hour"></div>
       <div class="ticks"><span id="tickStart"></span><span id="tickEnd"></span></div>
     </div>
   </div>
 
   <div class="readout">
-    <span class="when" id="when"></span>
-    <span class="area" id="area"></span>
-    <span class="note" id="note">reachable within an hour</span>
+    <div class="stat">
+      <p class="eyebrow" id="when"></p>
+      <p class="statnum" id="area"></p>
+      <p class="statsub" id="note">reachable within an hour</p>
+    </div>
+    <p class="compare" id="compare"></p>
     <button type="button" class="share" id="share">Copy link to this map</button>
   </div>
   <input class="shareurl" id="shareUrl" readonly hidden aria-label="Link to this map">
@@ -115,8 +134,6 @@
     return;
   }
 
-  const panels = new Map();
-  for (const p of D.panels) panels.set(p.origin + "|" + p.scenario, p);
   const hoursFor = (day) => D.panels
     .filter((p) => p.day === day && p.origin === state.origin)
     .sort((a, b) => a.hour - b.hour);
@@ -187,7 +204,7 @@
     `so they include a typical wait. Walking ${D.walking_mph} mph, up to a ` +
     `${D.max_walk_minutes}-minute walk to and from stops. Gaps inside a shaded area are ` +
     `places too far from any stop to walk to. Map data © OpenStreetMap contributors. ` +
-    `<br>Use <kbd>←</kbd> <kbd>→</kbd> to step through hours. ` +
+    `<br>Drag across the bars to scrub through the day, or use <kbd>←</kbd> <kbd>→</kbd>. ` +
     `<a href="https://github.com/loganserv44/WhereCanTheBusGetMe">Method and code</a>.`;
 
   const barsEl = document.getElementById("bars");
@@ -197,6 +214,28 @@
     for (const p of list) { const i = new Image(); i.src = p.image; }
   }
 
+  // Panel labels read "Weekday 8am". Inside a chosen day that prefix is noise -- the
+  // day is already a pressed button -- so ticks and comparisons use the hour alone.
+  const hourOnly = (p) =>
+    p.day_label && p.label.startsWith(p.day_label)
+      ? p.label.slice(p.day_label.length + 1) : p.label;
+
+  // An area on its own is a number with no scale. Measuring it against the day's best
+  // hour is what makes it mean something: 12 sq mi reads very differently once you know
+  // the same stop reaches 43 at its peak.
+  function compareText(current, peak, hours) {
+    if (!current.routed || !current.km2) {
+      return hours.length === 1
+        ? "StarTran runs no Sunday service, so none of this map is reachable."
+        : "No bus leaves this stop in this hour.";
+    }
+    if (current === peak) return "The best this stop manages all day.";
+    const pct = Math.round((1 - current.km2 / peak.km2) * 100);
+    if (pct < 1) return `Effectively the same as the ${hourOnly(peak)} peak.`;
+    return `<b>${pct}% smaller</b> than the same stop at ${hourOnly(peak)}, ` +
+           `which reaches ${peak.area}.`;
+  }
+
   function render() {
     const hours = hoursFor(state.day);
     if (!hours.length) return;
@@ -204,25 +243,29 @@
       state.hour = hours[0].hour;
     }
     const current = hours.find((p) => p.hour === state.hour);
-    const peak = Math.max(...hours.map((p) => p.km2 || 0)) || 1;
-    // A day with a single entry (Sunday: no service) has no shape to step through.
+    const peak = hours.reduce((a, b) => ((b.km2 || 0) > (a.km2 || 0) ? b : a));
+    const peakKm2 = peak.km2 || 1;
+    // A day with a single entry (Sunday: no service) has no shape to step through and
+    // nothing to play.
     document.getElementById("timeline").hidden = hours.length === 1;
 
     barsEl.innerHTML = "";
     for (const p of hours) {
-      const b = mkButton(barsEl, "", () => { state.hour = p.hour; render(); },
-                         `${p.label}: ${p.area || "no buses"}`);
-      b.style.height = Math.max(4, Math.round(((p.km2 || 0) / peak) * 100)) + "%";
+      const b = mkButton(barsEl, "",
+                         () => { stopPlay(); state.hour = p.hour; render(); },
+                         `${hourOnly(p)}: ${p.area || "no buses"}`);
+      b.style.height = Math.max(4, Math.round(((p.km2 || 0) / peakKm2) * 100)) + "%";
       b.setAttribute("aria-pressed", String(p.hour === state.hour));
       b.setAttribute("aria-label", `${p.label}, ${p.area || "no buses"}`);
     }
-    document.getElementById("tickStart").textContent = hours[0].label;
-    document.getElementById("tickEnd").textContent = hours[hours.length - 1].label;
+    document.getElementById("tickStart").textContent = hourOnly(hours[0]);
+    document.getElementById("tickEnd").textContent = hourOnly(hours[hours.length - 1]);
 
     document.getElementById("when").textContent = current.label;
     document.getElementById("area").textContent = current.area || "Nowhere";
     document.getElementById("note").textContent =
       current.routed ? "reachable within an hour" : "no buses run";
+    document.getElementById("compare").innerHTML = compareText(current, peak, hours);
 
     imgEl.src = current.image;
     imgEl.alt = `Map of the area reachable from ` +
@@ -239,6 +282,70 @@
     // If the copy fallback is open, it must keep showing a link to what's on screen.
     if (!shareUrl.hidden) shareUrl.value = location.href;
   }
+
+  // Playback. The argument of this page is that service builds up and then collapses
+  // over a day; playing it makes that argument in about ten seconds without the reader
+  // clicking anything. One pass, no loop -- the point is where the day ends up.
+  const playBtn = document.getElementById("play");
+  const PLAY_LABEL = playBtn.textContent;
+  const PLAY_MS = 600;
+  let playTimer = null;
+
+  function stopPlay() {
+    clearInterval(playTimer);
+    playTimer = null;
+    playBtn.textContent = PLAY_LABEL;
+    playBtn.setAttribute("aria-pressed", "false");
+  }
+
+  function startPlay() {
+    const hours = hoursFor(state.day);
+    if (hours.length < 2) return;
+    preload(hours);   // the whole day at once, so playback doesn't stutter on a swap
+    // Pressing play while parked on the last hour should replay the day, not sit still.
+    if (state.hour === hours[hours.length - 1].hour) state.hour = hours[0].hour;
+    playBtn.textContent = "❚❚ Pause";
+    playBtn.setAttribute("aria-pressed", "true");
+    render();
+    playTimer = setInterval(() => {
+      // Re-read the list each tick: switching origin or day mid-play is allowed, and
+      // playback should follow to the new one rather than run off the end of the old.
+      const list = hoursFor(state.day);
+      const i = list.findIndex((p) => p.hour === state.hour);
+      if (i >= list.length - 1) { stopPlay(); return; }
+      state.hour = list[i + 1].hour;
+      render();
+    }, PLAY_MS);
+  }
+
+  playBtn.addEventListener("click", () => (playTimer ? stopPlay() : startPlay()));
+
+  // Scrubbing. The bars stay bars rather than becoming a slider, because each one's
+  // height is that hour's reachable area -- the timeline is a chart as much as a
+  // control, and a slider would throw that away. Dragging across them gives the
+  // slider's feel without losing the shape of the day.
+  function scrubTo(clientX) {
+    const hours = hoursFor(state.day);
+    if (hours.length < 2) return;
+    const r = barsEl.getBoundingClientRect();
+    const i = Math.max(0, Math.min(hours.length - 1,
+                                   Math.floor((clientX - r.left) / r.width * hours.length)));
+    if (hours[i].hour === state.hour) return;  // only redraw when the hour actually changes
+    state.hour = hours[i].hour;
+    render();
+  }
+
+  barsEl.addEventListener("pointerdown", (e) => {
+    stopPlay();
+    // Capture on the container, not the bar: render() replaces the bars underneath the
+    // pointer on every step, and a capture held by one of them would die with it.
+    barsEl.setPointerCapture(e.pointerId);
+    scrubTo(e.clientX);
+    e.preventDefault();  // no text selection while dragging
+  });
+  barsEl.addEventListener("pointermove", (e) => {
+    if (barsEl.hasPointerCapture(e.pointerId)) scrubTo(e.clientX);
+  });
 
   const shareBtn = document.getElementById("share");
   const shareUrl = document.getElementById("shareUrl");
@@ -274,8 +381,12 @@
   addEventListener("keydown", (e) => {
     const hours = hoursFor(state.day);
     const i = hours.findIndex((p) => p.hour === state.hour);
-    if (e.key === "ArrowRight" && i < hours.length - 1) { state.hour = hours[i + 1].hour; render(); }
-    if (e.key === "ArrowLeft" && i > 0) { state.hour = hours[i - 1].hour; render(); }
+    if (e.key === "ArrowRight" && i < hours.length - 1) {
+      stopPlay(); state.hour = hours[i + 1].hour; render();
+    }
+    if (e.key === "ArrowLeft" && i > 0) {
+      stopPlay(); state.hour = hours[i - 1].hour; render();
+    }
   });
 
   applyHash();
