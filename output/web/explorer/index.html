@@ -68,6 +68,18 @@
             color: var(--ink2); font-size: 14px; }
   .legend span { display: flex; align-items: center; gap: 7px; }
   .sw { width: 26px; height: 12px; border-radius: 2px; }
+  .findings { margin: 44px 0 0; }
+  .findings > h2 { font-size: 22px; margin: 0 0 4px; }
+  .findings article { padding: 20px 0; border-top: 1px solid var(--hairline); }
+  .findings h3 { font-size: 18px; line-height: 1.35; margin: 0 0 8px; max-width: 46ch; }
+  .findings p { margin: 0; max-width: 62ch; color: var(--ink2); }
+  .findings .fact { color: var(--ink); font-weight: 600; margin-bottom: 8px; }
+  .findings .fact b { color: var(--accent); }
+  .findings a { color: var(--accent); text-decoration-thickness: 1px;
+                text-underline-offset: 2px; }
+  .aside article { border-top: 1px dashed var(--hairline); }
+  .aside h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+              color: var(--muted); font-weight: 600; }
   footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--hairline);
            color: var(--muted); font-size: 13px; }
   footer a { color: var(--ink2); }
@@ -123,6 +135,84 @@
   </figure>
 
   <div class="legend" id="legend"></div>
+
+  <!-- Findings. Every figure below is either in methodology.md or in data.json, and the
+       areas are written exactly as the explorer prints them, so a reader who follows a
+       link sees the same number they just read. Do not edit a number here without
+       re-checking it against the run that produced the maps. -->
+  <section class="findings">
+    <h2>Six things the maps turned up</h2>
+
+    <article>
+      <h3>“Service runs until 9:50pm” is true and useless.</h3>
+      <p class="fact">8 of 18 routes still run after 9pm. After 9:30pm, <b>3</b>.</p>
+      <p>That figure is the last bus <em>anywhere on the system</em>, not anything a rider
+      can plan around. Downtown — the best-served stop in Lincoln — reaches
+      <a href="#downtown/wk/21">0.8 sq mi at 9pm</a>.</p>
+    </article>
+
+    <article>
+      <h3>By 8pm, two of these stops have no bus at all.</h3>
+      <p class="fact">Bryan East and Briarpark both read 0.5 sq mi.</p>
+      <p>That is about sixty grid cells, which is what a ten-minute walk covers. The map
+      isn’t showing you a smaller bus network — it’s showing you
+      <a href="#bryan-east/wk/20">walking</a>. The last bus left Bryan East at 7:46pm and
+      Briarpark at 6:26pm.</p>
+    </article>
+
+    <article>
+      <h3>The worst time to catch a bus is the middle of the day.</h3>
+      <p class="fact">Bryan East: 29 sq mi at 7am, <b>19 at 10am</b>, 34 at 3pm.</p>
+      <p>Every origin does this — a dip from about 9am to 1pm that sits below the early
+      morning, then a peak at <a href="#bryan-east/wk/15">2–3pm</a>. Dawn beats midday.</p>
+    </article>
+
+    <article>
+      <h3>Two maps are pixel-for-pixel identical, and that’s correct.</h3>
+      <p class="fact"><a href="#s40th-briarpark/wk/8">Briarpark, weekday 8am</a> and
+      <a href="#s40th-briarpark/sa/17">Briarpark, Saturday 5pm</a>: 4.2 sq mi each.</p>
+      <p>Not similar — the same file, byte for byte. Route 56 is the only service there,
+      and it runs hourly on both days. A 60-minute departure window over hourly service
+      samples every possible wait — 0 through 59 minutes — exactly once, so the median
+      can’t tell the two days apart. It looks like a bug and it’s a proof.</p>
+    </article>
+
+    <article>
+      <h3>Saturday doesn’t taper off. It stops.</h3>
+      <p class="fact">N 27th &amp; Superior: 13 sq mi at 4pm, 8.6 at 5pm,
+      <a href="#n27th-superior/sa/19">0.3 at 7pm</a>.</p>
+      <p>Saturday holds one flat level all day rather than building to a peak, and then
+      falls off a cliff inside three hours.</p>
+    </article>
+
+    <article>
+      <h3>The schedule file claims 16 months and knows about one holiday.</h3>
+      <p class="fact">Labor Day 2026. That’s the only exception in the feed.</p>
+      <p>It declares itself valid through the end of 2027, yet Thanksgiving, Christmas and
+      the 4th of July are simply absent. Either StarTran runs an ordinary weekday on
+      Christmas, or the feed only carries near-term exceptions — and nothing in the data
+      says which.</p>
+    </article>
+  </section>
+
+  <section class="findings aside">
+    <article>
+      <h3>One I can’t explain</h3>
+      <p>I don’t know why the middle of the day is the worst time to travel. My guess is
+      school-day service — StarTran runs it, and the afternoon peak lines up with a school
+      letting out — but I haven’t checked that against the route timetables, so I’m not
+      going to claim it.</p>
+    </article>
+
+    <article>
+      <h3>One I got wrong</h3>
+      <p>My first check of the routing network added up the legs of each trip. That made a
+      two-bus ride to the Nebraska Union look like 8 minutes, and the check “failed.” The
+      time spent standing at the origin before the first bus belongs to no leg, so it was
+      being dropped. The network was right; my measurement was wrong. Every trip is now
+      timed door to door, from when you leave to when you arrive.</p>
+    </article>
+  </section>
 
   <footer id="footer"></footer>
 </div>
@@ -429,6 +519,22 @@
       say("Press Ctrl+C");
     }
   });
+
+  // A finding's link sets the explorer to the map that proves it. The hashchange
+  // listener below already applies the state; this only brings the map back into view,
+  // because by the time a reader clicks one they are well below it. Scrolling to the
+  // readout rather than the figure keeps the number and the map on screen together.
+  const readoutEl = document.querySelector(".readout");
+  const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (const a of document.querySelectorAll('.findings a[href^="#"]')) {
+    a.addEventListener("click", () => {
+      stopPlay();
+      // Defer past the hashchange this click is about to fire, so the scroll lands on
+      // the map the reader asked for rather than the one still on screen.
+      setTimeout(() => readoutEl.scrollIntoView(
+        {behavior: smooth ? "smooth" : "auto", block: "start"}), 0);
+    });
+  }
 
   addEventListener("hashchange", () => {
     const before = key();
