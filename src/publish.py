@@ -36,6 +36,7 @@ import argparse
 import json
 import shutil
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 WEB = Path("output/web")
@@ -51,6 +52,70 @@ def human(n: float) -> str:
             return f"{n:,.1f} {unit}"
         n /= 1024
     return f"{n:,.1f} TB"
+
+
+class TagBalance(HTMLParser):
+    """Track unclosed elements, ignoring tags HTML does not require closing."""
+
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+            "meta", "source", "track", "wbr"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.stack: list[str] = []
+        self.errors: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in self.VOID:
+            self.stack.append(tag)
+
+    def handle_endtag(self, tag):
+        if tag in self.VOID:
+            return
+        if tag not in self.stack:
+            self.errors.append(f"</{tag}> with no opening tag")
+            return
+        while self.stack and self.stack[-1] != tag:
+            self.errors.append(f"<{self.stack.pop()}> is never closed")
+        if self.stack:
+            self.stack.pop()
+
+
+def check_structure(page: Path) -> list[str]:
+    """Refuse a page that is not well-formed, or has lost its layout container.
+
+    This exists because of a real failure: an edit script meant to insert a nav wrote
+    the bytes 0x01 and 0x02 in place of `<div class="wrap">` and `<h1>` -- a Python
+    string's "\\1" is chr(1), not a regex backreference. The page still had a title, a
+    stylesheet and a working explorer, so every check that asked "did this work?"
+    said yes. What it had lost was the element that gives the whole site its margins,
+    and it went live with text jammed against the window edge.
+
+    The lesson generalised: verify the output, not that the operation ran.
+    """
+    problems: list[str] = []
+    raw = page.read_bytes()
+    stray = sorted({b for b in raw if b < 9 or b in (11, 12)})
+    if stray:
+        problems.append(f"{page.name} contains control characters "
+                        f"{[hex(b) for b in stray]} -- something wrote raw bytes into it")
+
+    text = page.read_text(encoding="utf-8")
+    parser = TagBalance()
+    parser.feed(text)
+    problems += [f"{page.name}: {e}" for e in parser.errors]
+    problems += [f"{page.name}: <{t}> is never closed" for t in parser.stack]
+
+    # Every page on this site is laid out by one container. Without it there are no
+    # margins and no max width, which is easy to miss in a check that only looks for
+    # content.
+    if text.count('<div class="wrap">') != 1:
+        problems.append(f'{page.name} has no single <div class="wrap"> -- the page would '
+                        f"render full-bleed with no margins")
+    for asset in ("style.css", "common.js", "data.js"):
+        if asset not in text:
+            problems.append(f"{page.name} does not reference {asset}")
+    return problems
 
 
 def check_feed(page_feed: str | None, manifest: dict) -> list[str]:
@@ -124,6 +189,8 @@ def collect() -> tuple[list[Path], list[str]]:
     # the check runs in two steps: the run used the feed that is on disk, and that feed
     # calls itself what the page says it does.
     problems += check_feed(data.get("feed_version"), manifest)
+    for page in pages:
+        problems += check_structure(page)
 
     files = [*pages, *assets]
 
