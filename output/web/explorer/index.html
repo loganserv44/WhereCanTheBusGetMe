@@ -3,13 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Where can the bus get you? — hour by hour</title>
+<title>Where can the bus get you? — StarTran access in Lincoln, Nebraska</title>
+<meta name="description" content="How far the bus actually gets you from six points in Lincoln, Nebraska, hour by hour — and how far it doesn't, after dark and on weekends.">
+<meta name="author" content="Logan Servant">
+<link rel="canonical" href="https://loganserv44.github.io/where-the-bus-goes/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Where can the bus get you in an hour?">
+<meta property="og:description" content="Scheduled StarTran access in Lincoln, Nebraska, mapped hour by hour. At 8am, downtown reaches 41% of the city. At 8pm, 9%. On Sunday, nothing.">
+<meta property="og:url" content="https://loganserv44.github.io/where-the-bus-goes/">
+<meta property="og:image" content="https://loganserv44.github.io/where-the-bus-goes/downtown.webp">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   :root {
     --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
     --hairline: #e1e0d9; --accent: #1c5cab; --bar: #9ec5f4;
   }
   * { box-sizing: border-box; }
+  /* Deliberately no `scroll-behavior: smooth` here. It would also govern calls that
+     pass behavior:"auto", and some embedded browsers accept a smooth scroll and then
+     never perform it -- which would take the reliable path down with it. Scrolling is
+     handled in goTo() instead, which checks that it happened. */
   body { margin: 0; background: var(--surface); color: var(--ink);
          font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
@@ -80,6 +93,15 @@
   .aside article { border-top: 1px dashed var(--hairline); }
   .aside h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
               color: var(--muted); font-weight: 600; }
+  .panels { margin: 48px 0 0; padding-top: 12px; border-top: 2px solid var(--ink); }
+  .panels > h2 { font-size: 22px; margin: 14px 0 8px; }
+  .panels > .lede { margin-bottom: 26px; }
+  .panel { margin: 0 0 34px; }
+  .panel img { width: 100%; height: auto; display: block; background: #fff;
+               border: 1px solid var(--hairline); }
+  .panel figcaption { margin-top: 10px; color: var(--ink2); font-size: 15px;
+                      max-width: 62ch; }
+  .panel figcaption b { color: var(--ink); }
   footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--hairline);
            color: var(--muted); font-size: 13px; }
   footer a { color: var(--ink2); }
@@ -141,7 +163,7 @@
        link sees the same number they just read. Do not edit a number here without
        re-checking it against the run that produced the maps. -->
   <section class="findings">
-    <h2>Six things the maps turned up</h2>
+    <h2>Seven things the maps turned up</h2>
 
     <article>
       <h3>“Service runs until 9:50pm” is true and useless.</h3>
@@ -193,6 +215,15 @@
       Christmas, or the feed only carries near-term exceptions — and nothing in the data
       says which.</p>
     </article>
+
+    <article>
+      <h3>A map can show you service that isn’t there.</h3>
+      <p class="fact">No bus stops at UNL East Campus on a Saturday. Its Saturday map
+      still shades <a href="#fig-unl-east-campus">10.5 sq mi</a>.</p>
+      <p>Zero Saturday departures — routes 24 and 25 are weekday-only — and yet the panel
+      is far from empty, because you can walk to stops that other routes still serve. The
+      shading is real. It just isn’t what it looks like.</p>
+    </article>
   </section>
 
   <section class="findings aside">
@@ -212,6 +243,53 @@
       being dropped. The network was right; my measurement was wrong. Every trip is now
       timed door to door, from when you leave to when you arrive.</p>
     </article>
+  </section>
+
+  <!-- The six comparison figures. Captions are each origin's reason for being chosen,
+       from data/origins.csv, converted to US units to match the rest of the page. -->
+  <section class="panels">
+    <h2>The six origins, side by side</h2>
+    <p class="lede">Each figure holds one origin across four departure times — weekday
+    8am and 8pm, Saturday 5pm, Sunday noon — drawn at one shared scale, so the change
+    across a week is a matter of looking rather than arithmetic. The Sunday panel is blank
+    because no StarTran bus runs on a Sunday.</p>
+
+    <figure class="panel" id="fig-downtown">
+      <img src="downtown.webp" alt="Four maps of the area reachable from Downtown (11th and P) at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>Downtown (11th &amp; P).</b> Best case: 315 weekday trips, the most
+      of any stop in Lincoln. Last bus 9:48pm. Stands in for UNL City Campus, 0.6 miles
+      away.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-unl-east-campus">
+      <img src="unl-east-campus.webp" alt="Four maps of the area reachable from UNL East Campus at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>UNL East Campus.</b> The student’s stop: 302 weekday trips and none
+      at all on Saturday, because routes 24 and 25 are weekday-only.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-bryan-east">
+      <img src="bryan-east.webp" alt="Four maps of the area reachable from Bryan Health East Campus at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>Bryan Health East Campus (48th &amp; A).</b> The shift worker’s stop.
+      The last weekday bus leaves at 7:46pm, which is before a lot of shifts end.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-n27th-superior">
+      <img src="n27th-superior.webp" alt="Four maps of the area reachable from North 27th and Superior at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>N 27th &amp; Superior.</b> Suburban housing and groceries: 88
+      apartment buildings and 3 supermarkets within half a mile.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-48th-r-target">
+      <img src="48th-r-target.webp" alt="Four maps of the area reachable from 48th and R at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>48th &amp; R (Target).</b> Groceries: 4 supermarkets within half a
+      mile, served by route 44 and its 30 weekday trips.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-s40th-briarpark">
+      <img src="s40th-briarpark.webp" alt="Four maps of the area reachable from South 40th and Briarpark at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>S 40th &amp; Briarpark.</b> Worst case with service at all: the south
+      edge, route 56 only, 13 weekday trips, last bus 6:26pm.</figcaption>
+    </figure>
   </section>
 
   <footer id="footer"></footer>
@@ -525,15 +603,42 @@
   // because by the time a reader clicks one they are well below it. Scrolling to the
   // readout rather than the figure keeps the number and the map on screen together.
   const readoutEl = document.querySelector(".readout");
-  const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Scroll to an element, and make sure it actually happened. Some embedded browsers
+  // accept behavior:"smooth" and then never perform the scroll, which leaves a link
+  // that looks broken; if nothing has moved shortly afterwards, jump instead. The
+  // animation is the enhancement, the scroll is the requirement.
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function goTo(el) {
+    const before = window.scrollY;
+    const target = Math.round(el.getBoundingClientRect().top) + before;
+    el.scrollIntoView({behavior: reduceMotion ? "auto" : "smooth", block: "start"});
+    if (Math.abs(target - before) < 4) return;   // already there; nothing to rescue
+    setTimeout(() => {
+      if (window.scrollY === before) window.scrollTo(0, target);
+    }, 250);
+  }
+
   for (const a of document.querySelectorAll('.findings a[href^="#"]')) {
-    a.addEventListener("click", () => {
-      stopPlay();
-      // Defer past the hashchange this click is about to fire, so the scroll lands on
-      // the map the reader asked for rather than the one still on screen.
-      setTimeout(() => readoutEl.scrollIntoView(
-        {behavior: smooth ? "smooth" : "auto", block: "start"}), 0);
-    });
+    const target = a.getAttribute("href").slice(1);
+    if (target.includes("/")) {
+      a.addEventListener("click", () => {
+        stopPlay();
+        // Defer past the hashchange this click is about to fire, so the scroll lands on
+        // the map the reader asked for rather than the one still on screen.
+        setTimeout(() => goTo(readoutEl), 0);
+      });
+    } else {
+      // A link to one of the comparison figures further down. Scroll to it without
+      // letting the fragment change: the URL holds the explorer's state, and a
+      // "#fig-..." in it would be read back as a broken permalink on the next load.
+      a.addEventListener("click", (e) => {
+        const el = document.getElementById(target);
+        if (!el) return;
+        e.preventDefault();
+        goTo(el);
+      });
+    }
   }
 
   addEventListener("hashchange", () => {

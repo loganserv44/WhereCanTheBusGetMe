@@ -14,9 +14,12 @@ laptop, a type and colour pass (accent derived from the map ramp, not chosen sep
 surfacing each origin's note from `data/origins.csv`, and a last-bus marker on the
 timeline.
 
-**Next: Task 7 — publish.** Hand-write `where-the-bus-goes/index.html` in the
-`loganserv44.github.io` repo and copy the images across with a short `src/publish.py`.
-`output/web/explorer/index.html` is a working page to build on.
+**Task 7 — publish: done 2026-09-22.** The page is live at
+[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/).
+`src/publish.py` copies `output/web/explorer/index.html` and its 126 images into the
+`loganserv44.github.io` repo, after checking that the feed version the page prints is the
+feed the maps were routed from. Nothing is generated at publish time: the page is
+hand-written and tracked here, so the site serves what was reviewed.
 
 **Open questions, none blocking:** whether to switch the map colour ramp from blue to
 orange (compared in `output/preview/ramp_options.png`); the repo licence; and two

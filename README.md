@@ -9,14 +9,17 @@ The deliverable is a set of side-by-side panels: same origin, four departure sce
 (Tue 8am, Tue 8pm, Sat 5pm, Sun noon). The comparison is the point, not any single map.
 StarTran runs no Sunday service, so the fourth panel is blank.
 
-> **Status: maps done, not yet published.** Tasks 0–5 are complete: the premise is
-> verified, the network is built and checked, six origins chosen, travel times computed,
-> and the six final figures rendered to `output/panels/` (print) and `output/web/` (web).
-> There is also an hourly explorer — `output/web/explorer/index.html`, openable straight
-> from disk — with one map per hour for four origins, a play button that runs a whole day
-> in about ten seconds, and the chosen origin, day and hour kept in the URL so one map can
-> be linked to. What's left is the site page and publishing. See [PLAN.md](PLAN.md) for
-> the task breakdown.
+> **Status: published.** Tasks 0–7 are complete. The premise is verified, the network
+> built and checked, six origins chosen, travel times computed, the six figures rendered,
+> and the page is live at
+> **[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/)**.
+>
+> The page is an hourly explorer — one map per hour for four origins, a play button that
+> runs a whole day in about ten seconds, and the chosen origin, day and hour kept in the
+> URL so a single map can be linked to — followed by seven findings, each linking to the
+> map that demonstrates it, and the six comparison figures. It is
+> `output/web/explorer/index.html` in this repo, hand-written and tracked, so what the
+> site serves is what was reviewed. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 
@@ -86,8 +89,15 @@ python src/publish.py             # copy panels + page into the Pages site repo
 The finished maps are published to
 **[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/)**,
 deployed from the separate [`loganserv44.github.io`](https://github.com/loganserv44/loganserv44.github.io)
-repo. `src/publish.py` copies the rendered panels across and regenerates the page so its
-stated feed version and scenario dates always match the run that produced the images.
+repo. `src/publish.py` copies the page and its 126 images across — it generates nothing,
+so the published page is the one tracked here.
+
+Before copying, it checks that the feed version the page prints really is the feed the
+maps were routed from (by SHA-256 against `data/raw/MANIFEST.json`, then by reading
+`feed_info.txt` out of the zip), that every image the page can ask for exists, and that no
+render predates `output/run_manifest.json`. Those failures are silent ones — the maps
+still draw, they are just from a different run than the text claims — so the script
+refuses rather than warns. `--check` runs the checks and copies nothing.
 
 This repo holds the pipeline; that one holds the website. They're kept separate because
 the pipeline pulls a ~96 MB OSM extract, a 64 MB R5 jar, and a network cache, which have

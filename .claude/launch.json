@@ -6,6 +6,13 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8777", "--directory", "output/web/explorer"],
       "port": 8777
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8778", "--directory",
+                      "../loganserv44.github.io"],
+      "port": 8778
     }
   ]
 }
