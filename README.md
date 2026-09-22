@@ -14,12 +14,19 @@ StarTran runs no Sunday service, so the fourth panel is blank.
 > and the page is live at
 > **[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/)**.
 >
-> The page is an hourly explorer — one map per hour for four origins, a play button that
-> runs a whole day in about ten seconds, and the chosen origin, day and hour kept in the
-> URL so a single map can be linked to — followed by seven findings, each linking to the
-> map that demonstrates it, and the six comparison figures. It is
-> `output/web/explorer/index.html` in this repo, hand-written and tracked, so what the
-> site serves is what was reviewed. See [PLAN.md](PLAN.md) for the task breakdown.
+> Two pages, switched between by a nav at the top of each:
+>
+> - **`index.html`** — the hourly explorer. One map per hour for four origins, a play
+>   button that runs a whole day in about ten seconds, and the chosen origin, day and hour
+>   kept in the URL so a single map can be linked to. Below it, seven findings, each
+>   linking to the map that demonstrates it.
+> - **`compare.html`** — the six origins as 2×2 comparison figures. Two of the six exist
+>   only here; the explorer covers the other four hour by hour.
+>
+> They share `style.css` and `common.js` (the legend and footer, built from `data.js` so
+> the two pages cannot state different routing parameters). All four files live in
+> `output/web/explorer/` in this repo, hand-written and tracked, so what the site serves
+> is what was reviewed. See [PLAN.md](PLAN.md) for the task breakdown.
 
 ## Method (short version)
 
@@ -89,8 +96,13 @@ python src/publish.py             # copy panels + page into the Pages site repo
 The finished maps are published to
 **[loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/)**,
 deployed from the separate [`loganserv44.github.io`](https://github.com/loganserv44/loganserv44.github.io)
-repo. `src/publish.py` copies the page and its 126 images across — it generates nothing,
-so the published page is the one tracked here.
+repo. `src/publish.py` copies both pages, their two shared assets and 126 images across —
+it generates nothing, so the published pages are the ones tracked here.
+
+Note that the two pages can only be previewed together *after* publishing: the hourly
+maps live in `output/web/explorer/` and the six comparison figures in `output/web/`, and
+they land in one directory only when `publish.py` assembles them. `.claude/launch.json`
+has a `site` entry that serves the assembled copy for exactly this reason.
 
 Before copying, it checks that the feed version the page prints really is the feed the
 maps were routed from (by SHA-256 against `data/raw/MANIFEST.json`, then by reading

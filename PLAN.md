@@ -16,10 +16,14 @@ timeline.
 
 **Task 7 — publish: done 2026-09-22.** The page is live at
 [loganserv44.github.io/where-the-bus-goes](https://loganserv44.github.io/where-the-bus-goes/).
-`src/publish.py` copies `output/web/explorer/index.html` and its 126 images into the
-`loganserv44.github.io` repo, after checking that the feed version the page prints is the
-feed the maps were routed from. Nothing is generated at publish time: the page is
+`src/publish.py` copies both pages, `style.css`, `common.js` and 126 images into the
+`loganserv44.github.io` repo, after checking that the feed version the pages print is the
+feed the maps were routed from. Nothing is generated at publish time: the pages are
 hand-written and tracked here, so the site serves what was reviewed.
+
+The site is two pages — `index.html` (the hourly explorer plus the findings) and
+`compare.html` (the six 2×2 figures) — split on 2026-09-22 because one page carrying all
+of it ran to 13,000 px and was too much to take in at once.
 
 **Open questions, none blocking:** whether to switch the map colour ramp from blue to
 orange (compared in `output/preview/ramp_options.png`); the repo licence; and two

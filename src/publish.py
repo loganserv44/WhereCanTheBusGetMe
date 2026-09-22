@@ -7,8 +7,11 @@ a network cache, none of which belong in a repo that serves static files.
 
 What gets copied into <site>/where-the-bus-goes/:
 
-    output/web/explorer/index.html      the page itself
-    output/web/explorer/data.js|json    what the page reads
+    output/web/explorer/index.html      the hourly explorer
+    output/web/explorer/compare.html    the six 2x2 figures, side by side
+    output/web/explorer/style.css       shared by both pages
+    output/web/explorer/common.js       the legend and footer, shared by both pages
+    output/web/explorer/data.js|json    what the pages read
     output/web/explorer/*.webp          one map per origin x hour
     output/web/*.webp                   the six 2x2 comparison figures
 
@@ -97,9 +100,11 @@ def collect() -> tuple[list[Path], list[str]]:
     """
     problems: list[str] = []
 
-    page = EXPLORER / "index.html"
     data_json = EXPLORER / "data.json"
-    for required in (page, data_json, EXPLORER / "data.js", MANIFEST):
+    pages = [EXPLORER / "index.html", EXPLORER / "compare.html"]
+    assets = [EXPLORER / "style.css", EXPLORER / "common.js",
+              EXPLORER / "data.js", data_json]
+    for required in (*pages, *assets, MANIFEST):
         if not required.exists():
             problems.append(f"missing {required}")
     if problems:
@@ -107,7 +112,9 @@ def collect() -> tuple[list[Path], list[str]]:
 
     data = json.loads(data_json.read_text(encoding="utf-8"))
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
-    html = page.read_text(encoding="utf-8")
+    # Both pages are searched for image references, so a figure that only compare.html
+    # shows still counts as referenced.
+    html = "\n".join(p.read_text(encoding="utf-8") for p in pages)
 
     # The page prints a feed version in its footer, from data.js. Checking it is the
     # whole reason this script exists, because the failure is silent: a page can state
@@ -118,7 +125,7 @@ def collect() -> tuple[list[Path], list[str]]:
     # calls itself what the page says it does.
     problems += check_feed(data.get("feed_version"), manifest)
 
-    files = [page, data_json, EXPLORER / "data.js"]
+    files = [*pages, *assets]
 
     # Every hourly map the page can ask for.
     for panel in data["panels"]:
@@ -132,7 +139,7 @@ def collect() -> tuple[list[Path], list[str]]:
     # than through data.json -- so they are checked against the HTML itself.
     for fig in sorted(WEB.glob("*.webp")):
         if f'src="{fig.name}"' not in html:
-            print(f"  note: {fig.name} is not referenced by the page; copying anyway")
+            problems.append(f"{fig.name} is not shown by either page")
         files.append(fig)
 
     for name in sorted({f'src="{n}"' for n in html.split('src="')[1:]}):
@@ -172,7 +179,7 @@ def main() -> int:
     total = sum(f.stat().st_size for f in files)
     images = [f for f in files if f.suffix == ".webp"]
     print(f"  {len(files)} files, {human(total)}")
-    print(f"  {len(images)} maps + the page, data.js and data.json")
+    print(f"  {len(images)} maps + {len(files) - len(images)} page/asset files")
 
     if args.check:
         print("\n--check: nothing copied.")

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six origins, side by side — Where can the bus get you?</title>
+<meta name="description" content="Six points in Lincoln, Nebraska, each mapped across four departure times: weekday 8am and 8pm, Saturday 5pm, and a blank Sunday.">
+<meta name="author" content="Logan Servant">
+<link rel="canonical" href="https://loganserv44.github.io/where-the-bus-goes/compare.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Six origins, side by side">
+<meta property="og:description" content="Six points in Lincoln, Nebraska, each mapped across four departure times. The Sunday panel is blank because no StarTran bus runs on a Sunday.">
+<meta property="og:url" content="https://loganserv44.github.io/where-the-bus-goes/compare.html">
+<meta property="og:image" content="https://loganserv44.github.io/where-the-bus-goes/downtown.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <nav class="pagenav" aria-label="Views">
+    <a href="./">Hour by hour</a>
+    <a href="compare.html" aria-current="page">Six origins, side by side</a>
+  </nav>
+
+  <h1>Six origins, side by side</h1>
+  <p class="lede">Each figure holds one starting point across four departure times —
+  weekday 8am and 8pm, Saturday 5pm, and Sunday noon — drawn at one shared scale, so the
+  change across a week is a matter of looking rather than arithmetic. The Sunday panel is
+  blank because no StarTran bus runs on a Sunday.</p>
+
+  <p class="lede">Scale differs <em>between</em> figures, because a stop that reaches 48
+  square miles and one that reaches four cannot usefully share a view. Every panel carries
+  its own scale bar. To step through a single origin hour by hour instead,
+  <a href="./">use the explorer</a>.</p>
+
+  <!-- No legend element here on purpose: every figure has one drawn into the image, and
+       common.js skips the legend when the page doesn't ask for one. -->
+
+  <!-- Captions are each origin's reason for being chosen, from data/origins.csv,
+       converted to US units to match the rest of the site. -->
+  <section class="panels bare">
+    <figure class="panel" id="fig-downtown">
+      <img src="downtown.webp" alt="Four maps of the area reachable from Downtown (11th and P) at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>Downtown (11th &amp; P).</b> Best case: 315 weekday trips, the most
+      of any stop in Lincoln. Last bus 9:48pm. Stands in for UNL City Campus, 0.6 miles
+      away.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-unl-east-campus">
+      <img src="unl-east-campus.webp" alt="Four maps of the area reachable from UNL East Campus at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>UNL East Campus.</b> The student’s stop: 302 weekday trips and none
+      at all on Saturday, because routes 24 and 25 are weekday-only. Its Saturday panel is
+      still far from empty — that reach is walked to other stops, not ridden.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-bryan-east">
+      <img src="bryan-east.webp" alt="Four maps of the area reachable from Bryan Health East Campus at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>Bryan Health East Campus (48th &amp; A).</b> The shift worker’s stop.
+      The last weekday bus leaves at 7:46pm, which is before a lot of shifts end.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-n27th-superior">
+      <img src="n27th-superior.webp" alt="Four maps of the area reachable from North 27th and Superior at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>N 27th &amp; Superior.</b> Suburban housing and groceries: 88
+      apartment buildings and 3 supermarkets within half a mile.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-48th-r-target">
+      <img src="48th-r-target.webp" alt="Four maps of the area reachable from 48th and R at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>48th &amp; R (Target).</b> Groceries: 4 supermarkets within half a
+      mile, served by route 44 and its 30 weekday trips.</figcaption>
+    </figure>
+
+    <figure class="panel" id="fig-s40th-briarpark">
+      <img src="s40th-briarpark.webp" alt="Four maps of the area reachable from South 40th and Briarpark at weekday 8am, weekday 8pm, Saturday 5pm and Sunday noon." loading="lazy" width="2400" height="3220">
+      <figcaption><b>S 40th &amp; Briarpark.</b> Worst case with service at all: the south
+      edge, route 56 only, 13 weekday trips, last bus 6:26pm.</figcaption>
+    </figure>
+  </section>
+
+  <nav class="pagenav" aria-label="Views">
+    <a href="./">Back to the hourly explorer</a>
+  </nav>
+
+  <footer id="footer"></footer>
+</div>
+
+<script src="data.js"></script>
+<script src="common.js"></script>
+<script>
+  buildChrome("Two of these six — UNL East Campus and 48th &amp; R — are figures only; " +
+              "the explorer covers the other four hour by hour.");
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+/* Shared by index.html (the hourly explorer) and compare.html (the six figures).
+   One file rather than a copy per page: the two must not drift apart, and the whole
+   thing is small enough that the unused rules on either page cost nothing. */
+
+:root {
+  --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --hairline: #e1e0d9; --accent: #1c5cab; --bar: #9ec5f4;
+}
+* { box-sizing: border-box; }
+/* Deliberately no `scroll-behavior: smooth` here. It would also govern calls that
+   pass behavior:"auto", and some embedded browsers accept a smooth scroll and then
+   never perform it -- which would take the reliable path down with it. Scrolling is
+   handled in goTo() instead, which checks that it happened. */
+body { margin: 0; background: var(--surface); color: var(--ink);
+       font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.2; margin: 0 0 10px; }
+.lede { color: var(--ink2); margin: 0 0 26px; max-width: 68ch; }
+.row { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+            color: var(--muted); margin: 0; font-weight: 600; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; font-size: 14px; padding: 8px 14px; cursor: pointer;
+         background: #fff; color: var(--ink2); border: 1px solid var(--hairline);
+         border-radius: 999px; }
+button:hover { border-color: var(--muted); color: var(--ink); }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
+                              color: #fff; }
+.controls { padding: 16px 0 18px; border-top: 1px solid var(--hairline);
+            border-bottom: 1px solid var(--hairline); margin-bottom: 20px; }
+.timeline { margin: 22px 0 6px; }
+.tlhead { display: flex; align-items: center; gap: 12px; margin: 0 0 8px; }
+.tlhead h2 { margin: 0; }
+/* pan-y, not none: a vertical swipe over the bars still scrolls the page, while
+   horizontal movement is ours to scrub with. */
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 62px;
+        touch-action: pan-y; }
+.bars button { flex: 1 1 0; padding: 0; border: 0; border-radius: 3px 3px 0 0;
+               background: var(--bar); min-width: 0; cursor: ew-resize; }
+.bars button[aria-pressed="true"] { background: var(--accent); }
+.bars button:hover { outline: 2px solid var(--muted); outline-offset: 1px; }
+.ticks { display: flex; justify-content: space-between; color: var(--muted);
+         font-size: 12px; margin-top: 6px; }
+button.play { margin-left: auto; font-size: 13px; padding: 5px 13px; min-width: 88px;
+              white-space: nowrap; flex: 0 0 auto; }
+button.play[aria-pressed="true"] { background: var(--accent); border-color: var(--accent);
+                                   color: #fff; }
+
+.readout { display: flex; flex-wrap: wrap; gap: 4px 28px; align-items: flex-end;
+           margin: 22px 0 12px; }
+.eyebrow { margin: 0; color: var(--ink2); font-size: 15px; }
+.statnum { margin: 2px 0 0; font-size: clamp(38px, 7vw, 56px); line-height: 1;
+           font-weight: 700; color: var(--accent); letter-spacing: -.02em; }
+.statsub { margin: 4px 0 0; color: var(--ink2); font-size: 15px; }
+.compare { margin: 0 0 4px; color: var(--ink2); font-size: 15px; max-width: 30ch; }
+.compare b { color: var(--ink); font-weight: 700; }
+button.share { font-size: 13px; padding: 6px 12px; margin: 0 0 4px auto; }
+.shareurl { width: 100%; font: inherit; font-size: 13px; padding: 6px 8px;
+            margin: 0 0 12px; color: var(--ink2); background: #fff;
+            border: 1px solid var(--hairline); border-radius: 6px; }
+figure { margin: 0; }
+figure img { width: 100%; height: auto; display: block; background: #fff;
+             border: 1px solid var(--hairline); transition: opacity .12s ease; }
+/* Only seen when a map isn't in cache yet: the previous one stays up, dimmed, so a
+   slow load reads as "working" rather than as a broken image. */
+figure.loading img { opacity: .45; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 0;
+          color: var(--ink2); font-size: 14px; }
+.legend span { display: flex; align-items: center; gap: 7px; }
+.sw { width: 26px; height: 12px; border-radius: 2px; }
+.findings { margin: 44px 0 0; }
+.findings > h2 { font-size: 22px; margin: 0 0 4px; }
+.findings article { padding: 20px 0; border-top: 1px solid var(--hairline); }
+.findings h3 { font-size: 18px; line-height: 1.35; margin: 0 0 8px; max-width: 46ch; }
+.findings p { margin: 0; max-width: 62ch; color: var(--ink2); }
+.findings .fact { color: var(--ink); font-weight: 600; margin-bottom: 8px; }
+.findings .fact b { color: var(--accent); }
+.findings a { color: var(--accent); text-decoration-thickness: 1px;
+              text-underline-offset: 2px; }
+.aside article { border-top: 1px dashed var(--hairline); }
+.aside h3 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+            color: var(--muted); font-weight: 600; }
+.panels { margin: 48px 0 0; padding-top: 12px; border-top: 2px solid var(--ink); }
+/* On compare.html the figures are the page, not a section appended to one, so they need
+   no rule above them and no gap to clear. */
+.panels.bare { margin-top: 28px; padding-top: 0; border-top: 0; }
+.panels > h2 { font-size: 22px; margin: 14px 0 8px; }
+.panels > .lede { margin-bottom: 26px; }
+.panel { margin: 0 0 34px; }
+.panel img { width: 100%; height: auto; display: block; background: #fff;
+             border: 1px solid var(--hairline); }
+.panel figcaption { margin-top: 10px; color: var(--ink2); font-size: 15px;
+                    max-width: 62ch; }
+.panel figcaption b { color: var(--ink); }
+footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--hairline);
+         color: var(--muted); font-size: 13px; }
+footer a { color: var(--ink2); }
+kbd { font: inherit; font-size: 12px; background: #fff; border: 1px solid var(--hairline);
+      border-radius: 4px; padding: 1px 5px; }
+@media (max-width: 620px) { .bars { height: 48px; } }
+
+/* Page switcher, on both pages. The current page is marked rather than hidden, so it
+   is always visible that there are two. */
+.pagenav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; }
+.pagenav a { font-size: 14px; padding: 8px 15px; border-radius: 999px;
+             border: 1px solid var(--hairline); background: #fff; color: var(--ink2);
+             text-decoration: none; }
+.pagenav a:hover { border-color: var(--muted); color: var(--ink); }
+.pagenav a[aria-current="page"] { background: var(--accent); border-color: var(--accent);
+                                  color: #fff; }
